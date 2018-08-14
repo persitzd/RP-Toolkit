@@ -2,6 +2,41 @@ function [subsets_of_observations, num_of_subsets] = HPZ_Indices_Problem_Distrib
 
 
 
+% When calculating various Inconsistency Indices (e.g. Varian, Houtman-Maks), 
+% the calculations can be performed separately for disjoint subsets of
+% observations, then in the end aggregated together.
+%
+% Such distribution of the calculation problem to smaller problems, assists
+% and improves running time in 2 aspects:
+%   (1) if the complexity of number of iterations of the algorithm is
+%       O(f(n)), and normally in complicated indices f is either polynomial
+%       with a high degree or even exponential, reducing the size of n by
+%       this distribution significantly reduces running time.
+%   (2) the inner complexity of each iteration is smaller, since the sizes
+%       of all matrices are smaller.
+%   * Also any subset that has only 1 observation is a subset that does not
+%     affect the index, therefore it requires no further calculations.
+%
+% In order to achieve all these great fits, this function finds the best
+% possible distribution (distribution to smallest subsets), and returns
+% the subsets.
+%
+% The distribution to subsets differs depending on the index and the
+% calculation problem related to it, for example: 
+% * in the case of the Varian Index, we would like to have disjoint subsets 
+%   such that there is no cycle of strict-revealed-preferred relations that 
+%   involves observation from different subsets.
+% * in the case of the Houtman-Maks Index with 3 or more goods, we would 
+%   like to have disjoint subsets such that there is no GARP-violating 
+%   cycle that involves observation from different subsets.
+% * in the case of the Houtman-Maks Index with 2 goods, we would like to 
+%   have disjoint subsets such that there is no GARP-violating cycle of
+%   length 2 that involves observation from different subsets.
+% The parameters "relevant_RP" & "relevant_SRP" allows the distribution
+% according to different types of cycles and relations.
+
+
+
 if ~isempty(varargin)
     % the varargin allows the user to directly pass this function
     % the relevant_GARP_couples matrix, instead of the relevant_RP & relevant_SRP 
