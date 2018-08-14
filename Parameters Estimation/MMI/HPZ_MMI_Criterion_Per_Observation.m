@@ -31,7 +31,7 @@ global current_subject
 
 
 
-if (pref_class == HPZ_Constants.risk_pref) && (function_flag == HPZ_Constants.CRRA_func) && (numeric_flag == false)
+if (pref_class == HPZ_Constants.risk_pref) && (function_flag == HPZ_Constants.CRRA_func) && (numeric_flag == HPZ_Constants.analytic)
     % if we assume CRRA, we perform a certain modification for the sake of
     % avoiding a certain computational problem.
     % this modification is needed in the calculation of the utility in its
@@ -47,12 +47,15 @@ end
 
 
 
-if (numeric_flag)
+if numeric_flag == HPZ_Constants.numeric
     % numeric approach
     [criterions, param] = HPZ_MMI_Numeric(param, endowments, observations, treatment, function_flag, pref_class);
-else
+elseif numeric_flag == HPZ_Constants.analytic
     % analytic approach
     [criterions, param] = HPZ_MMI_Analytic(param, observations, function_flag, pref_class);
+elseif numeric_flag == HPZ_Constants.semi_numeric
+    % semi-numeric approach
+    [criterions, param] = HPZ_MMI_Semi_Numeric(param, observations, function_flag, pref_class);
 end
 
 

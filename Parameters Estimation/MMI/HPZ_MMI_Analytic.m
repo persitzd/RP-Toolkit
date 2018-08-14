@@ -129,7 +129,7 @@ if pref_class == HPZ_Constants.risk_pref
                 elseif 1/(1+beta) <= p && p <= (1+beta)
                     % x1* optimal:
                     x1_opt = ( u_0  / ( 2+beta ) ) ^ (1/(1-rho));
-                    % x2* optimal:x1*
+                    % x2* optimal: x1*
                     x2_opt = x1_opt;
                     % compute the optimal expenditure, using optimal bundle
                     % (x1*, x2*)
