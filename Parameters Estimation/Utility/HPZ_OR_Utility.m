@@ -14,6 +14,8 @@ function [utility] = HPZ_OR_Utility (x, alpha, rho, function_flag)
 
 
 
+
+
 if function_flag == HPZ_Constants.CES_func
     % calculate the utility (the CES-function value) using the formula:
     % u(x,y) = [alpha*x^rho + (1-alpha)*y^rho]^(1/rho)
@@ -34,8 +36,8 @@ if function_flag == HPZ_Constants.CES_func
     
     elseif (rho == 0)
         % when rho = 0, the function is not defined. the following
-        % definition is equal to the limit of the utility to 0+
-        utility = x(1)^alpha + x(2)^(1-alpha);
+        % definition is equal to the limit of the utility when rho->0+
+        utility = x(1)^alpha * x(2)^(1-alpha);
         
     elseif (x(1) == 0 || x(2) == 0) && (rho < 0)
         % if one of the quantities is 0 and rho is negative, the utility is 0 - 
@@ -53,9 +55,11 @@ if function_flag == HPZ_Constants.CES_func
     elseif ((x(2) > x(1)) && (rho > 0)) || ((x(2) < x(1)) && (rho < 0))
         % in this case, we divide and multiply by x(2)
         utility = x(2) * ( ((alpha * ((x(1)/x(2)) ^ rho)) + (1 - alpha)) ^ (1 / rho) );
+        %fprintf('type 1 utility : %.20g\n', utility);
     else
         % in this case, we divide and multiply by x(1)
         utility = x(1) * ( ((alpha + (1 - alpha)*((x(2)/x(1)) ^ rho))) ^ (1 / rho) );
+        %fprintf('type 2 utility : %.20g\n', utility);
     end
     
 end
