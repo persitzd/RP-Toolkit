@@ -55,10 +55,12 @@ end
 %   min_counter that is determined by the user in this screen.
 % also, if in the future one would want to let the user choose the
 %   max_starting_points, this screen is the one it should be in.
-if (numeric_flag)
+if (numeric_flag == HPZ_Constants.numeric)
     max_starting_points = HPZ_Constants.max_starting_points_numeric;
-else   
+elseif (numeric_flag == HPZ_Constants.analytic)
     max_starting_points = HPZ_Constants.max_starting_points_analytic;
+elseif (numeric_flag == HPZ_Constants.semi_numeric)
+    max_starting_points = HPZ_Constants.max_starting_points_semi_numeric;
 end
 
 % this str will appear to the user as an option for min_counter, meaning
@@ -129,14 +131,16 @@ radio_bottom = 10;
 % offset to the right of radio options that are vertical
 %radio_offset = 15;
 % offsets to the right of yes/no horizontal radio options
-yes_no_offsets = [25 , 180];
+%yes_no_offsets = [25 , 180];
 % offsets to the right of one/two/three horizontal radio options
 three_offsets = [10 , 129, 230];
+three_offsets2 = [10 , 117, 250];
 
 % width of each element
 element_width = 400;
 % normal_width for a sub element
 sub_element_width = 120;
+sub_element_width2 = 180;
 % label width for aggregation / metric
 label_width = 170;
 
@@ -158,7 +162,7 @@ scroll_width = 20;
 bottom_space_height = buttons_space_height;
 top_space_height = 0;
 panel_height = figure_height - bottom_space_height - top_space_height;
-figure_title = strcat('Optimization Settings (', HPZ_Constants.current_run_screen, num2str(runs_counter), ')');
+figure_title = char(strcat('Optimization Settings (', HPZ_Constants.current_run_screen, {' '}, num2str(runs_counter), ')'));
 [S.fh , S.panel] = ui_scroll_screen(figure_width, figure_height, scroll_width, max_height_percent, top_space_height, bottom_space_height, figure_title);
 
 % width including scroll bar if there is one
@@ -431,7 +435,7 @@ S.metric_NLLS_rd(1) = uicontrol(S.bg_NLSS,...
                 'enable', enable_string_NLLS, ...
                 'style','rad',...
                 'unit','pix',...
-                'position',[yes_no_offsets(1) , radio_bottom , sub_element_width , radio_height],...
+                'position',[three_offsets2(1) , radio_bottom , sub_element_width2 , radio_height],...
                 'fontsize',font_size,...
                 'string',' Euclidean metric');
 
@@ -440,9 +444,18 @@ S.metric_NLLS_rd(2) = uicontrol(S.bg_NLSS,...
                 'enable', enable_string_NLLS, ...
                 'style','rad',...
                 'unit','pix',...
-                'position',[yes_no_offsets(2) , radio_bottom , sub_element_width , radio_height],...
+                'position',[three_offsets2(2) , radio_bottom , sub_element_width2 , radio_height],...
                 'fontsize',font_size,...
                 'string',' Choi et al. (2007) metric');
+            
+S.metric_NLLS_rd(3) = uicontrol(S.bg_NLSS,...
+                'value',(metric_flag == HPZ_Constants.normalized_euclidean_metric),...
+                'enable', enable_string_NLLS, ...
+                'style','rad',...
+                'unit','pix',...
+                'position',[three_offsets2(3) , radio_bottom , sub_element_width2 , radio_height],...
+                'fontsize',font_size,...
+                'string',' normalized-Euclidean metric');
 %% End of NLLS settings
 
                 
@@ -465,8 +478,8 @@ S.parallel_label_ch = uicontrol('Parent',S.panel, ...
                 'position',[175 , 47 , 275 , 25],...
                 'string',' Use matlab parallel computing package.',...
                 'fontsize',font_size,...
-                'value', (numeric_flag && parallel_flag), ...
-                'enable', enable{numeric_flag+1},...
+                'value', ((numeric_flag == HPZ_Constants.numeric) && parallel_flag), ...
+                'enable', enable{(numeric_flag == HPZ_Constants.numeric)+1},...
                 'fontsize',10);
 
             
@@ -558,11 +571,14 @@ function [] = ok_button_call(varargin)
     if strcmpi(get(S.initial_points_NLLS, 'enable'), 'on') % NLLS
         rd_vals_NLLS = get (S.metric_NLLS_rd(:), 'value');
         if rd_vals_NLLS{1} == 1
-            % Euclidean
-            metric_flag = 1;
-        else
-            % Choi (2007) metirc
-            metric_flag = 2;
+            % Euclidean metric
+            metric_flag = HPZ_Constants.euclidean_metric;
+        elseif rd_vals_NLLS{2} == 1
+            % Choi (2007) metric
+            metric_flag = HPZ_Constants.CFGK_metric;
+        elseif rd_vals_NLLS{3} == 1
+            % normalized-Euclidean metric
+            metric_flag = HPZ_Constants.normalized_euclidean_metric;
         end % end switch
 
         % set thte number of convergence points for NLLS

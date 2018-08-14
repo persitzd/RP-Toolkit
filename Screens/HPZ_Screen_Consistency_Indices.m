@@ -1,4 +1,4 @@
-function [GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, ok] = HPZ_Screen_Consistency_Indices(GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, runs_counter)  
+function [GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, ok] = HPZ_Screen_Consistency_Indices(GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, runs_counter)  
 
 % this function creates a user interface screen from which the user chooses
 % which of the consistency and inconsistency measures to be calculated, and
@@ -21,7 +21,7 @@ enable = {'off','on'};
 
 % screen size
 figure_width = 780;
-figure_height = 670;
+figure_height = 690;
 % limit of height as percentage of computer screen height
 max_height_percent = HPZ_Constants.max_height_percent;
 
@@ -46,7 +46,7 @@ sub_element_width = 80;
 % how much the right part should be offset to the right in comparison to the left part 
 move_right = element_width + 60;
 % how much distance between parts (different indices) that are one below each other 
-move_down = 40;
+move_down = 20;
 
 % distance of highest element from top
 top_dist = 10;
@@ -90,7 +90,7 @@ scroll_width = 20;
 bottom_space_height = buttons_space_height;
 top_space_height = 0;
 panel_height = figure_height - bottom_space_height - top_space_height;
-figure_title = strcat('Inconsistency Indices (', HPZ_Constants.current_run_screen, num2str(runs_counter), ')');
+figure_title = char(strcat('Inconsistency Indices (', HPZ_Constants.current_run_screen, {' '}, num2str(runs_counter), ')'));
 [S.fh , S.panel] = ui_scroll_screen(figure_width, figure_height, scroll_width, max_height_percent, top_space_height, bottom_space_height, figure_title);
 
 % width including scroll bar if there is one
@@ -252,16 +252,112 @@ set(S.residual_GARP_choice(:),'callback',{@GARP_rd_call,S})     % Set callback.
 
 
 
+%% MPI settings
+% MPI will be ready for the next version (version 3), currently not implemented 
+% % current bottom coordinate (MPI is just below GARP)
+% current_bottom = current_bottom - label_height - move_down;
+% 
+% S.label_MPI = uicontrol('Parent',S.panel, 'style','text',...
+%                  'units','pix',...
+%                  'position',[left_label , current_bottom , label_width , label_height],...
+%                  'backgroundc',get(S.fh,'color'),...
+%                  'fontsize',label_font_size,'fontweight','bold',... 
+%                  'HorizontalAlignment','left',...
+%                  'string','MPI inconsistency index');
+% 
+% %% calculate MPI inconsistency index or not
+% 
+% % current height of element
+% current_height = radio_yes_no+radio_label;
+% % current bottom coordinate
+% current_bottom = current_bottom - current_height;
+% S.calculate_MPI = uibuttongroup('Parent',S.panel, 'units','pix',...
+%     'title', 'Calculate', ...
+%     'fontsize',font_size,...
+%     'pos',[left_other , current_bottom , element_width , current_height]);
+% 
+% S.calculate_MPI_choice(1) = uicontrol(S.calculate_MPI,...
+%     'value',MPI_flags(1), ...
+%     'enable','on',...
+%     'style','rad',...
+%     'unit','pix',...
+%     'position',[yes_no_offsets(1) , radio_bottom , sub_element_width , radio_yes_no],...
+%     'fontsize',font_size,...
+%     'string',' YES');
+% S.calculate_MPI_choice(2) = uicontrol(S.calculate_MPI,...
+%     'value',1-MPI_flags(1), ...
+%     'enable','on', ...
+%     'style','rad',...
+%     'unit','pix',...
+%     'position',[yes_no_offsets(2) , radio_bottom , sub_element_width , radio_yes_no],...
+%     'fontsize',font_size,...
+%     'string',' NO');
+% 
+% %% With or Without residuals
+% enable_temp = enable{MPI_flags(1)+1};
+% % current height of element
+% current_height = radio_yes_no+radio_label;
+% % current bottom coordinate
+% current_bottom = current_bottom - current_height;
+% S.residual_MPI = uibuttongroup('Parent',S.panel, 'units','pix',...
+%     'title', 'Residuals', ...
+%     'fontsize',font_size,...
+%     'pos',[left_other , current_bottom , element_width , current_height]);
+% 
+% S.residual_MPI_choice(1) = uicontrol(S.residual_MPI,...
+%     'value',MPI_flags(2), ...
+%     'enable',enable_temp,...
+%     'style','rad',...
+%     'unit','pix',...
+%     'position',[yes_no_offsets(1) , radio_bottom , sub_element_width , radio_yes_no],...
+%     'fontsize',font_size,...
+%     'string',' YES');
+% S.residual_MPI_choice(2) = uicontrol(S.residual_MPI,...
+%     'value',1-MPI_flags(2), ...
+%     'enable',enable_temp,...
+%     'style','rad',...
+%     'unit','pix',...
+%     'position',[yes_no_offsets(2) , radio_bottom , sub_element_width , radio_yes_no],...
+%     'fontsize',font_size,...
+%     'string',' NO');
+% 
+% %% In Sample and/or Out Of Sample
+% enable_temp = enable{(MPI_flags(1)&&MPI_flags(2))+1};
+% % current height of element
+% current_height = radio_height+radio_label;
+% % current bottom coordinate
+% current_bottom = current_bottom - current_height;
+% S.residual_MPI_options_group = uibuttongroup('Parent',S.panel, 'units','pix',...
+%     'title', 'Options', ...
+%     'fontsize',font_size,...
+%     'pos',[left_other , current_bottom , element_width , current_height]);
+% S.residual_MPI_options(1) = uicontrol(S.residual_MPI_options_group, ...
+%     'value',MPI_flags(3), ...
+%     'enable',enable_temp,...
+%     'style','rad',...
+%     'unit','pix',...
+%     'position',[radio_offset , radio_bottom , element_width , radio_height],...
+%     'string',' Out of Sample Calculation',...
+%     'fontsize',big_font_size);
+% 
+% 
+% set(S.calculate_MPI_choice(:),'callback',{@MPI_calc_call,S})  % Set callback.
+% set(S.residual_MPI_choice(:),'callback',{@MPI_rd_call,S})     % Set callback.
+
+%% End of MPI settings
+
+
+
+
+
 %% AFRIAT settings
 
-% current bottom coordinate (AFRIAT is just below GARP)
-current_bottom = current_bottom - move_down;
+% current bottom coordinate (AFRIAT is at the bottom, to the right of GARP)
+current_bottom = panel_height-label_height-top_dist;
 
-% current bottom coordinate
-current_bottom = current_bottom - label_height;
 S.label_AFRIAT = uicontrol('Parent',S.panel, 'style','text',...
                  'units','pix',...
-                 'position',[left_label , current_bottom , label_width , label_height],...
+                 'position',[left_label+move_right , current_bottom , label_width , label_height],...
                  'backgroundc',get(S.fh,'color'),...
                  'fontsize',label_font_size,'fontweight','bold',... 
                  'HorizontalAlignment','left',...
@@ -275,7 +371,7 @@ current_bottom = current_bottom - current_height;
 S.calculate_AFRIAT = uibuttongroup('Parent',S.panel, 'units','pix',...
     'title', 'Calculate', ...
     'fontsize',font_size,...
-    'pos',[left_other , current_bottom , element_width , current_height]);
+    'pos',[left_other+move_right , current_bottom , element_width , current_height]);
 
 S.calculate_AFRIAT_choice(1) = uicontrol(S.calculate_AFRIAT,...
     'value',AFRIAT_flags(1), ...
@@ -303,7 +399,7 @@ current_bottom = current_bottom - current_height;
 S.residual_AFRIAT = uibuttongroup('Parent',S.panel, 'units','pix',...
     'title', 'Residuals', ...
     'fontsize',font_size,...
-    'pos',[left_other , current_bottom , element_width , current_height]);
+    'pos',[left_other+move_right , current_bottom , element_width , current_height]);
 
 S.residual_AFRIAT_choice(1) = uicontrol(S.residual_AFRIAT,...
     'value',AFRIAT_flags(2), ...
@@ -331,7 +427,7 @@ current_bottom = current_bottom - current_height;
 S.residual_AFRIAT_options_group = uibuttongroup('Parent',S.panel, 'units','pix',...
     'title', 'Options', ...
     'fontsize',font_size,...
-    'pos',[left_other , current_bottom , element_width , current_height]);
+    'pos',[left_other+move_right , current_bottom , element_width , current_height]);
 S.residual_AFRIAT_options(1) = uicontrol(S.residual_AFRIAT_options_group, ...
     'value',AFRIAT_flags(3), ...
     'enable',enable_temp,...
@@ -352,8 +448,10 @@ set(S.residual_AFRIAT_choice(:),'callback',{@AFRIAT_rd_call,S})     % Set callba
 
 
 %% VARIAN settings
-% current bottom coordinate
-current_bottom = panel_height-label_height-top_dist;
+
+% current bottom coordinate (VARIAN is at the bottom of AFRIAT)
+current_bottom = current_bottom - move_down - label_height;
+
 S.label_VARIAN = uicontrol('Parent',S.panel, 'style','text',...
                  'units','pix',...
                  'position',[left_label+move_right , current_bottom , label_width , label_height],...
@@ -602,6 +700,39 @@ end
 
 
 
+%% MPI will be ready for the next version (version 3), currently not implemented 
+% %% managing enable and disable when choosing to calculate MPI or not
+% function [] = MPI_calc_call(varargin)
+%     % Callback for pushbutton.
+%     S = varargin{3};  % Get the structure.
+% 
+%     if (get(S.calculate_MPI_choice(2),'value') == 1.0)
+%         % Not interested in calcualtion
+%         set(S.residual_MPI_choice(:), 'enable', 'off');
+%         set(S.residual_MPI_options(:), 'enable', 'off');
+%     else 
+%         set(S.residual_MPI_choice(:), 'enable', 'on');
+%         if (get(S.residual_MPI_choice(2),'value') == 0.0)
+%             set(S.residual_MPI_options(:), 'enable', 'on');
+%         end
+%     end
+% end
+% 
+% %% managing enable and disable when choosing with and without residuals in MPI
+% function [] = MPI_rd_call(varargin)
+%     % Callback for pushbutton.
+%     S = varargin{3};  % Get the structure.
+% 
+%     if (get(S.residual_MPI_choice(2),'value') == 1.0)
+%         % Not Interested in Residuals 
+%         set(S.residual_MPI_options(:), 'enable', 'off');
+%     else 
+%         set(S.residual_MPI_options(:), 'enable', 'on');
+%     end
+% end
+
+
+
 %% managing enable and disable when choosing to calculate AFRIAT or not
 function [] = AFRIAT_calc_call(varargin)
     % Callback for pushbutton.
@@ -728,35 +859,73 @@ function [] = pb_call(varargin)
     end
 
     % in and out of sample
-    if ~(get(S.residual_GARP_choice(2),'value') == 1.0)
-        if get(S.residual_GARP_options(1), 'value') == 1.0
-            GARP_in_sample_flag = 1;
-        elseif get(S.residual_GARP_options(2), 'value') == 1.0
-            GARP_out_sample_flag = 1;
-        elseif get(S.residual_GARP_options(3), 'value') == 1.0
-            GARP_in_sample_flag = 1;
-            GARP_out_sample_flag = 1;
-        end
+    %if ~(get(S.residual_GARP_choice(2),'value') == 1.0)
+    if get(S.residual_GARP_options(1), 'value') == 1.0
+        GARP_in_sample_flag = 1;
+    elseif get(S.residual_GARP_options(2), 'value') == 1.0
+        GARP_out_sample_flag = 1;
+    elseif get(S.residual_GARP_options(3), 'value') == 1.0
+        GARP_in_sample_flag = 1;
+        GARP_out_sample_flag = 1;
     end
+    %end
 
     % which residuals (WARP / GARP / SARP)
-    if ~(get(S.residual_GARP_choice(2),'value') == 1.0)
-        if get(S.which_residual_GARP_options(1), 'value') == 1.0
-            WARP_res = 1;
-        elseif get(S.which_residual_GARP_options(2), 'value') == 1.0
-            GARP_res = 1;
-        elseif get(S.which_residual_GARP_options(3), 'value') == 1.0
-            SARP_res = 1;
-        elseif get(S.which_residual_GARP_options(4), 'value') == 1.0
-            WARP_res = 1;
-            GARP_res = 1;
-            SARP_res = 1;
-        end
+    %if ~(get(S.residual_GARP_choice(2),'value') == 1.0)
+    if get(S.which_residual_GARP_options(1), 'value') == 1.0
+        WARP_res = 1;
+    elseif get(S.which_residual_GARP_options(2), 'value') == 1.0
+        GARP_res = 1;
+    elseif get(S.which_residual_GARP_options(3), 'value') == 1.0
+        SARP_res = 1;
+    elseif get(S.which_residual_GARP_options(4), 'value') == 1.0
+        WARP_res = 1;
+        GARP_res = 1;
+        SARP_res = 1;
     end
+    %end
 
     GARP_flags = [GARP_calculate_flag , GARP_residual_flag , GARP_in_sample_flag , GARP_out_sample_flag, WARP_res, GARP_res, SARP_res];
 
 
+    %% choices regarding MPI consistency index
+
+    MPI_calculate_flag = 0;
+    MPI_residual_flag = 0;
+    MPI_in_sample_flag = 0;
+    MPI_out_sample_flag = 0;
+
+    % MPI will be ready for the next version (version 3), currently not implemented 
+%     switch findobj(get(S.calculate_MPI,'selectedobject'))
+%         case S.calculate_MPI_choice(1)
+%             % with residuals
+%             MPI_calculate_flag = 1;
+% 
+%         case S.calculate_MPI_choice(2)
+%             % without residuals
+%             MPI_calculate_flag = 0;
+%     end
+% 
+%     switch findobj(get(S.residual_MPI,'selectedobject'))
+%         case S.residual_MPI_choice(1)
+%             % with residuals
+%             MPI_residual_flag = 1;
+% 
+%         case S.residual_MPI_choice(2)
+%             % without residuals
+%             MPI_residual_flag = 0;
+%     end
+% 
+%     % in and out of sample (only out of sample is relevant to MPI) 
+%     %if ~(get(S.residual_MPI_choice(2),'value') == 1.0)
+%     if get(S.residual_MPI_options(1), 'value') == 1.0
+%         MPI_out_sample_flag = 1;
+%     end
+%     %end
+
+    MPI_flags = [MPI_calculate_flag , MPI_residual_flag , MPI_in_sample_flag , MPI_out_sample_flag];
+
+    
     %% choices regarding AFRIAT consistency index
 
     AFRIAT_calculate_flag = 0;
@@ -821,17 +990,17 @@ function [] = pb_call(varargin)
             VARIAN_residual_flag = 0;
     end
 
-    if ~(get(S.residual_VARIAN_choice(2),'value') == 1.0)
-        % in and out of sample
-        if get(S.residual_VARIAN_options(1), 'value') == 1.0
-            VARIAN_in_sample_flag = 1;
-        elseif get(S.residual_VARIAN_options(2), 'value') == 1.0
-            VARIAN_out_sample_flag = 1;
-        elseif get(S.residual_VARIAN_options(3), 'value') == 1.0
-            VARIAN_in_sample_flag = 1;
-            VARIAN_out_sample_flag = 1;
-        end
+    %if ~(get(S.residual_VARIAN_choice(2),'value') == 1.0)
+    % in and out of sample
+    if get(S.residual_VARIAN_options(1), 'value') == 1.0
+        VARIAN_in_sample_flag = 1;
+    elseif get(S.residual_VARIAN_options(2), 'value') == 1.0
+        VARIAN_out_sample_flag = 1;
+    elseif get(S.residual_VARIAN_options(3), 'value') == 1.0
+        VARIAN_in_sample_flag = 1;
+        VARIAN_out_sample_flag = 1;
     end
+    %end
 
     VARIAN_flags = [VARIAN_calculate_flag , VARIAN_residual_flag , VARIAN_in_sample_flag , VARIAN_out_sample_flag];
 

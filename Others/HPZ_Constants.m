@@ -126,6 +126,7 @@ properties (Constant)
     % estimation begins (in a 2 x max_starting_points matrice), therefore 
     % these numbers must not be inf and not extermely high (e.g. 10^6).
     max_starting_points_numeric = 30;
+    max_starting_points_semi_numeric = 100;
     max_starting_points_analytic = 100;
     
     % possible values for min_counter 
@@ -137,6 +138,7 @@ properties (Constant)
     % size of sample for bootstrap : default sizes of sample for bootstrap
     % for numeirc estimation and for analytic estimation
     bootstrap_sample_size_numeric = 100;
+    bootstrap_sample_size_semi_numeric = 500;
     bootstrap_sample_size_analytic = 1000;
     
     
@@ -182,6 +184,15 @@ properties (Constant)
                         HPZ_Constants.NLLS_action_name,...
                         HPZ_Constants.MMI_action_name,...
                         HPZ_Constants.BI_action_name};
+    % actions short names (for waitbars)
+    Consistency_action_short_name = 'Consistency Indices';
+    NLLS_action_short_name        = 'NLLS';
+    MMI_action_short_name         = 'MMI';
+    BI_action_short_name          = 'BI';
+    all_actions_short_names = {HPZ_Constants.Consistency_action_short_name,...
+                        HPZ_Constants.NLLS_action_short_name,...
+                        HPZ_Constants.MMI_action_short_name,...
+                        HPZ_Constants.BI_action_short_name};
                     
     % actions file names
     % (these will be in the beginning of the results files names
@@ -194,10 +205,11 @@ properties (Constant)
     
     
     % metrics and aggregators (metric_flag, aggregation_flag)
-    % these are possible metrics for the NLLS method
+    % these are the implemented metrics for the NLLS method
     euclidean_metric = 1;
     CFGK_metric = 2;
-    % these are possible aggregators for the MMI method
+    normalized_euclidean_metric = 3;
+    % these are the implemented aggregators for the MMI method
     MMI_Max = 1;
     MMI_Mean = 2;
     MMI_AVGSSQ = 3;
@@ -215,15 +227,41 @@ properties (Constant)
     
     
     
-    % whether to show a seperate waitbar for each subject (1), show a 
-    % single waitbar for all subjects in each run (2) or not to show a 
-    % waitbar at all (0) (waitbar_options)
+    % numeric_flag
+    % whether to perform the estimation in numeric approach (1),
+    % analytic approach (0) or semi-numeric (2).
+    % semi-numeric is an approach that exists only in MMI (and also in BI,
+    % since BI relies on MMI); it means that the criterion is calculated
+    % using binary search (which is a numeric approach in nature), but in
+    % each iteration of the binary search, we use the analytic solution of
+    % the choices problem.
+    analytic = 0;
+    numeric = 1;
+    semi_numeric = 2;
+    % numeric options names (for waitbars)
+    analytic_name       = 'analytic';
+    numeric_name        = 'numeric';
+    semi_numeric_name   = 'semi-numeric';
+    all_numeric_options_names = {HPZ_Constants.analytic_name,...
+                                HPZ_Constants.numeric_name,...
+                                HPZ_Constants.semi_numeric_name};
+    
+    
+    
+    % waitbar_options
+    % whether to show a separate waitbar for each subject (1), show a 
+    % single waitbar for all subjects in each run (2) not to show a 
+    % waitbar at all (0), or a smart waitbar (3) that shows a single 
+    % waitbar when running on many subjects (>=10), and a separate 
+    % per subject for a smaller number of subjects
     waitbar_none = 0;
     waitbar_per_subject = 1;
     waitbar_single = 2;
+    waitbar_smart = 3;
+    waitbar_smart_num_of_subjects = 10;
     
     % max user-interface screen size, in percentage of the computer screen size 
-    max_height_percent = 0.7;
+    max_height_percent = 0.8;
     
     % when defining listdlg height, it does not take into acount the
     % height of the buttons in the bottom, so we do it instead
@@ -237,8 +275,9 @@ properties (Constant)
     %  waitbar will be set to be waitbar_finish_AFRIAT)
     waitbar_finish_GARP = 0.1;
     waitbar_finish_AFRIAT = 0.2;
-    waitbar_finish_VARIAN = 0.6;
+    waitbar_finish_VARIAN = 0.9;
     waitbar_finish_HOUTMAN = 1.0;
+    %waitbar_finish_MPI = 1.0;   % will be implemented in the next version
     
     % waitbar strings
     % headers
@@ -268,13 +307,13 @@ properties (Constant)
     % this string will appear in the user interface screens' headers, in the following way: 
     % e.g. current run is 3 :
     % '(' , current_run_screen , 3 , ')'
-    current_run_screen = 'Run Number .';
+    current_run_screen = 'Run Number';
     
     % these strings will appear in the waitbar headers, in the following way: 
     % e.g. current run is 3 out of a total of 10 runs :
     % '(' , current_run_waitbar , 3 , total_runs_waitbar , 10 , ')'
-    current_run_waitbar = 'Run Number .';
-    total_runs_waitbar  = ' Out Of ';
+    current_run_waitbar = 'Run Number';
+    total_runs_waitbar  = 'Out Of';
     
     % warning message when csvread fails to read a data file
     could_not_read_file_1 = 'Failed to read data file:';

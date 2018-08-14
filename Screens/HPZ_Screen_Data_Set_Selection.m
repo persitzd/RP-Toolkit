@@ -121,7 +121,7 @@ scroll_width = 20;
 bottom_space_height = buttons_space_height;
 top_space_height = 0;
 panel_height = figure_height - bottom_space_height - top_space_height;
-figure_title = strcat('Dataset Selection (', HPZ_Constants.current_run_screen, num2str(runs_counter), ')');
+figure_title = char(strcat('Dataset Selection (', HPZ_Constants.current_run_screen, {' '}, num2str(runs_counter), ')'));
 [S.fh , S.panel] = ui_scroll_screen(figure_width, figure_height, scroll_width, max_height_percent, top_space_height, bottom_space_height, figure_title);
 
 % width including scroll bar if there is one
@@ -399,6 +399,7 @@ function [] = ok_button_call(varargin)
 
         data_pref_class = data_list_prefs{data_set};
         ok = 1;
+        
         HPZ_Data_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, main_folder);
         % close the window
         close(S.fh);

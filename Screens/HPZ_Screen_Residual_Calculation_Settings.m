@@ -74,7 +74,7 @@ scroll_width = 20;
 bottom_space_height = buttons_space_height;
 top_space_height = 0;
 panel_height = figure_height - bottom_space_height - top_space_height;
-figure_title = strcat('Residuals Calculation Settings (', HPZ_Constants.current_run_screen, num2str(runs_counter), ')');
+figure_title = char(strcat('Residuals Calculation Settings (', HPZ_Constants.current_run_screen, {' '}, num2str(runs_counter), ')'));
 [S.fh , S.panel] = ui_scroll_screen(figure_width, figure_height, scroll_width, max_height_percent, top_space_height, bottom_space_height, figure_title);
 
 % width including scroll bar if there is one

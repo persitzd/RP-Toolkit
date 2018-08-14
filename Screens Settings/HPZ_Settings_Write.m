@@ -1,4 +1,4 @@
-function HPZ_Settings_Write(save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag, main_folder)
+function HPZ_Settings_Write(save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag, main_folder)
 
 % This function is called when the user wishes (and it is also the
 % default...) to save the choices he made now for the next time.
@@ -77,8 +77,12 @@ for i=1:max(size(HOUTMAN_flags))
     fprintf(settings_file, '%s,', num2str(HOUTMAN_flags(i)));   % line (7)
 end
 fprintf(settings_file, '\n');
-
-% not numeric (both risk and OR)
+% MPI - perform MPI, with/without residuals
+for i=1:max(size(MPI_flags))
+    fprintf(settings_file, '%s,', num2str(MPI_flags(i)));   % line (8)
+end
+fprintf(settings_file, '\n');
+% numeric (risk and OR)
 fprintf(settings_file, '%s,%s\n', num2str(risk_numeric_flag), num2str(OR_numeric_flag));   % line (8)
 % functional form (risk and OR)
 fprintf(settings_file, '%s,%s\n', num2str(risk_function_flag), num2str(OR_function_flag));   % line (9)
@@ -107,7 +111,7 @@ fprintf(settings_file, '%s\n', num2str(min_counter));   % line (18)
 % parallel_flag
 fprintf(settings_file, '%s\n', num2str(parallel_flag));   % line (19)
 
-% output_file_config (NLLS-eaclidean , NLLS-CFGK , MMI-Max , MMI-Mean , MMI-AVGSSQ, BI)
+% output_file_config (NLLS-euclidean , NLLS-CFGK , NLLS-normalized-euclidean , MMI-Max , MMI-Mean , MMI-AVGSSQ, BI)
 for i=1:max(size(output_file_config))
     fprintf(settings_file, '%s,', num2str(output_file_config(i)));   % line (20)
 end

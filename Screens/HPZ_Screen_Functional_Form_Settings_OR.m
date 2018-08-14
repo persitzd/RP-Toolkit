@@ -1,4 +1,4 @@
-function [numeric_flag, function_flag, param1_restrictions, param2_restrictions, ok] = HPZ_Screen_Functional_Form_Settings_OR(numeric_flag, function_flag, param1_restrictions, param2_restrictions, runs_counter)
+function [numeric_flag, function_flag, param1_restrictions, param2_restrictions, ok] = HPZ_Screen_Functional_Form_Settings_OR(action_flag, numeric_flag, function_flag, param1_restrictions, param2_restrictions, runs_counter)
 
 % this function promotes a user-interface screen to the user, allowing her
 % to make choices regarding the functional form and the solution approach
@@ -16,12 +16,12 @@ function [numeric_flag, function_flag, param1_restrictions, param2_restrictions,
 
 
 % this little cell helps us to convert 0 and 1 to 'off' and 'on', respectively 
-enable = {'off','on'}; %#ok<NASGU>
+enable = {'off','on'};
 
 
 
 % screen size
-figure_width = 450;
+figure_width = 500;
 figure_height = 270;
 % limit of height as percentage of computer screen height
 max_height_percent = HPZ_Constants.max_height_percent;
@@ -54,9 +54,11 @@ radio_bottom = 10;
 % radio_offset = 15;
 % offsets to the right of yes/no horizontal radio options
 yes_no_offsets = [25 , 180];
+% offsets to the right of one/two/three horizontal radio options
+three_offsets = [10 , 130, 250];
 
 % width of each element
-element_width = 360;
+element_width = 410;
 % normal_width for a sub element
 sub_element_width = 80;
 
@@ -75,7 +77,7 @@ scroll_width = 20;
 bottom_space_height = buttons_space_height;
 top_space_height = 0;
 panel_height = figure_height - bottom_space_height - top_space_height;
-figure_title = strcat('Functional Form Settings (', HPZ_Constants.current_run_screen, num2str(runs_counter), ')');
+figure_title = char(strcat('Functional Form Settings (', HPZ_Constants.current_run_screen, {' '}, num2str(runs_counter), ')'));
 [S.fh , S.panel] = ui_scroll_screen(figure_width, figure_height, scroll_width, max_height_percent, top_space_height, bottom_space_height, figure_title);
 
 % width including scroll bar if there is one
@@ -132,22 +134,31 @@ S.bg_na = uibuttongroup('Parent',S.panel, ...
     'pos',[left_other , current_bottom , element_width , current_height]);
 
 S.solution_option_rd(1) = uicontrol(S.bg_na,...
-    'value', numeric_flag,...
+    'value', (numeric_flag == HPZ_Constants.numeric)*1,...
     'enable','on',...
     'style','rad',...
     'unit','pix',...
     'fontsize',font_size,...
-    'position',[yes_no_offsets(1) , radio_bottom , element_width , radio_height],...
+    'position',[three_offsets(1) , radio_bottom , element_width , radio_height],...
     'string',' Numerical Approach');
 
 S.solution_option_rd(2) = uicontrol(S.bg_na,...
-    'value', 1-numeric_flag,...
+    'value', (numeric_flag == HPZ_Constants.analytic || (numeric_flag == HPZ_Constants.semi_numeric && ~(action_flag == HPZ_Constants.MMI_action || action_flag == HPZ_Constants.BI_action)))*1,...
     'enable','on',...
     'style','rad',...
     'unit','pix',...
     'fontsize',font_size,...
-    'position',[yes_no_offsets(2) , radio_bottom , element_width , radio_height],...
+    'position',[three_offsets(2) , radio_bottom , element_width , radio_height],...
     'string',' Analytical Approach');
+
+S.solution_option_rd(3) = uicontrol(S.bg_na,...
+    'value', (numeric_flag == HPZ_Constants.semi_numeric && (action_flag == HPZ_Constants.MMI_action || action_flag == HPZ_Constants.BI_action))*1,...
+    'enable', enable{1 + 1*(action_flag == HPZ_Constants.MMI_action || action_flag == HPZ_Constants.BI_action)},...
+    'style','rad',...
+    'unit','pix',...
+    'fontsize',font_size,...
+    'position',[three_offsets(3) , radio_bottom , element_width , radio_height],...
+    'string',' Semi-Numerical Approach');
 
 % set(S.functional_form_rd(:),'callback',{@rd_call,S})  % Set callback.
 
@@ -220,9 +231,11 @@ function [] = ok_button_call(varargin)
 
     %% Solution Options
     if get(S.solution_option_rd(1), 'value') == 1.0
-        numeric_flag = true;
-    else
-        numeric_flag = false;
+        numeric_flag = HPZ_Constants.numeric;
+    elseif get(S.solution_option_rd(2), 'value') == 1.0
+        numeric_flag = HPZ_Constants.analytic;
+    elseif get(S.solution_option_rd(3), 'value') == 1.0
+        numeric_flag = HPZ_Constants.semi_numeric;
     end
 
     % close the window

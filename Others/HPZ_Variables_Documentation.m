@@ -70,6 +70,7 @@ function HPZ_Variables_Documentation
 %   observed and predicted bundles.
 %   1 - Euclidean norm.
 %   2 - Geometric mean (as in choi et al(2007)). 
+%   3 - normalized Euclidean norm.
 
 %% aggregation_flag
 % indicates the aggregator for the MMI criterion
@@ -107,10 +108,6 @@ function HPZ_Variables_Documentation
 % second parameter to be not less than -7 and not more than 20.
 
 
-
-%% numeric_flag
-% whether to perform the estimation in numeric approach (true)
-% or analytic approach (false)
 
 %% write_all_flag
 % preface: 

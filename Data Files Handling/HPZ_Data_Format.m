@@ -31,7 +31,15 @@ catch
     mat = 0;
     success = false;
 end
-    
+
+
+
+if success
+    % check if the file is formatted correctly - if not it will print an error and will crash 
+    HPZ_check_file_format_correctness (mat);
+end
+
+
 
 end
 

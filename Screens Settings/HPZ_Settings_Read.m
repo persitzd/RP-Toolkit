@@ -1,4 +1,4 @@
-function [save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag] = HPZ_Settings_Read(main_folder)
+function [save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag] = HPZ_Settings_Read(main_folder)
 
 % this function reads the user-interface screens saved settings
 
@@ -13,14 +13,14 @@ try
     % reading from the file
     [settings] = csvread(strcat(main_folder, '/', HPZ_Constants.settings_files_dir, '/', HPZ_Constants.settings_file_name, '.csv'));
     
-    % in the next line, we call the 23th row and 8th column in the settings
-    % matrix, because we have 23 rows and the max number of columns is 7
+    % in the next line, we call the 24th row and 8th column in the settings
+    % matrix, because we have 24 rows and the max number of columns is 7
     % (it is 7 for GARP flags).
     % if it doesn't exists, it means that the settings file is corrupted,
     % cause it doesn't have all required data.
-    % if in the future you will add more rows (>23) or use longer rows (num
+    % if in the future you will add more rows (>24) or use longer rows (num
     % of columns > 7), you should increase these numbers respectively.
-    check_settings = settings(23 , 7); %#ok<NASGU>
+    check_settings = settings(24 , 7); %#ok<NASGU>
 catch
     % A) if we failed to read the file,
     % we assume it might be because it was accidently deleted, or because
@@ -40,12 +40,13 @@ GARP_flags = settings(4,1:7);
 AFRIAT_flags = settings(5,1:4);
 VARIAN_flags = settings(6,1:4);
 HOUTMAN_flags = settings(7,1:4);
-risk_numeric_flag = settings(8,1);
-OR_numeric_flag = settings(8,2);
-risk_function_flag = settings(9,1); %
-OR_function_flag = settings(9,2); %
-risk_param1_restrictions = settings(10,1:2);
-risk_param2_restrictions = settings(11,1:2);
+MPI_flags = settings(8,1:4);
+risk_numeric_flag = settings(9,1);
+OR_numeric_flag = settings(9,2);
+risk_function_flag = settings(10,1); %
+OR_function_flag = settings(10,2); %
+risk_param1_restrictions = settings(11,1:2);
+risk_param2_restrictions = settings(12,1:2);
 if (risk_param1_restrictions(1) == -HPZ_Constants.infinity) 
     risk_param1_restrictions(1) = -inf; end
 if (risk_param1_restrictions(2) == HPZ_Constants.infinity) 
@@ -54,8 +55,8 @@ if (risk_param2_restrictions(1) == -HPZ_Constants.infinity)
     risk_param2_restrictions(1) = -inf; end
 if (risk_param2_restrictions(2) == HPZ_Constants.infinity) 
     risk_param2_restrictions(2) = inf; end
-OR_param1_restrictions = settings(12,1:2);
-OR_param2_restrictions = settings(13,1:2);
+OR_param1_restrictions = settings(13,1:2);
+OR_param2_restrictions = settings(14,1:2);
 if (OR_param1_restrictions(1) == -HPZ_Constants.infinity) 
     OR_param1_restrictions(1) = -inf; end
 if (OR_param1_restrictions(2) == HPZ_Constants.infinity) 
@@ -64,24 +65,24 @@ if (OR_param2_restrictions(1) == -HPZ_Constants.infinity)
     OR_param2_restrictions(1) = -inf; end
 if (OR_param2_restrictions(2) == HPZ_Constants.infinity) 
     OR_param2_restrictions(2) = inf; end
-fix_corners = settings(14,1);
-aggregation_flag = settings(15,1); %
-metric_flag = settings(16,1); %
-max_time_estimation = settings(17,1);
+fix_corners = settings(15,1);
+aggregation_flag = settings(16,1); %
+metric_flag = settings(17,1); %
+max_time_estimation = settings(18,1);
 if max_time_estimation <= 0
     max_time_estimation = inf;
 end
-min_counter = settings(18,1); %
+min_counter = settings(19,1); %
 if min_counter == HPZ_Constants.infinity
     min_counter = inf;
 end
-parallel_flag = settings(19,1);
-output_file_config = settings(20,1:6);
-write_all_flag = settings(21,1);
-bootstrap_flag = settings(22,1);
-residual_flag = settings(23,1);
-in_sample_flag = settings(23,2);
-out_sample_flag = settings(23,3);
+parallel_flag = settings(20,1);
+output_file_config = settings(21,1:7);
+write_all_flag = settings(22,1);
+bootstrap_flag = settings(23,1);
+residual_flag = settings(24,1);
+in_sample_flag = settings(24,2);
+out_sample_flag = settings(24,3);
 
 
 
@@ -120,11 +121,11 @@ for i=1:length(HOUTMAN_flags)
     end
 end
 % numeric flags
-if (risk_numeric_flag ~= 0 && risk_numeric_flag ~= 1)
-    risk_numeric_flag = 1;
+if (risk_numeric_flag ~= HPZ_Constants.analytic && risk_numeric_flag ~= HPZ_Constants.numeric && risk_numeric_flag ~= HPZ_Constants.semi_numeric)
+    risk_numeric_flag = HPZ_Constants.analytic;
 end
-if (OR_numeric_flag ~= 0 && OR_numeric_flag ~= 1)
-    OR_numeric_flag = 1;
+if (OR_numeric_flag ~= HPZ_Constants.analytic && OR_numeric_flag ~= HPZ_Constants.numeric && OR_numeric_flag ~= HPZ_Constants.semi_numeric)
+    OR_numeric_flag = HPZ_Constants.analytic;
 end
 % function flags
 if (risk_function_flag ~= HPZ_Constants.CRRA_func && risk_function_flag ~= HPZ_Constants.CARA_func)
@@ -141,7 +142,7 @@ end
 if (aggregation_flag ~= HPZ_Constants.MMI_Max && aggregation_flag ~= HPZ_Constants.MMI_Mean && aggregation_flag ~= HPZ_Constants.MMI_AVGSSQ)
    aggregation_flag = HPZ_Constants.MMI_AVGSSQ;
 end
-if (metric_flag ~= HPZ_Constants.euclidean_metric && metric_flag ~= HPZ_Constants.CFGK_metric)
+if (metric_flag ~= HPZ_Constants.euclidean_metric && metric_flag ~= HPZ_Constants.CFGK_metric && metric_flag ~= HPZ_Constants.normalized_euclidean_metric)
    metric_flag = HPZ_Constants.euclidean_metric;
 end
 % we check if min_counter is one of those that appear in the list in

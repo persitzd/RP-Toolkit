@@ -47,44 +47,47 @@ fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '1', '1');   % line (6)
 % HOUTMAN-MAKS - perform HOUTMAN-MAKS, without residuals of any sort,
 % but default residuals is only out-of-sample (in-sample is not optional in fact)
 fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '0', '1');   % line (7)
+% MPI - perform MPI, without residuals of any sort,
+% but default residuals is only out-of-sample (in-sample is not optional in fact)
+fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '0', '1');   % line (8)
 
 % not numeric (analytic is default for both risk and OR)
-fprintf(settings_file, '%s,%s\n', '0','0');   % line (8)
+fprintf(settings_file, '%s,%s\n', '0','0');   % line (9)
 % functional form (set to first for both risk and OR)
-fprintf(settings_file, '%s,%s\n', '1','1');   % line (9)
+fprintf(settings_file, '%s,%s\n', '1','1');   % line (10)
 % restrictions on the 1st parameter (beta) in risk preferences
-fprintf(settings_file, '%s,%s\n', '-1', num2str(HPZ_Constants.infinity));   % line (10)
+fprintf(settings_file, '%s,%s\n', '-1', num2str(HPZ_Constants.infinity));   % line (11)
 % restrictions on the 2nd parameter (rho/A) in risk preferences
-fprintf(settings_file, '%s,%s\n', '0', num2str(HPZ_Constants.infinity));   % line (11)
+fprintf(settings_file, '%s,%s\n', '0', num2str(HPZ_Constants.infinity));   % line (12)
 % restrictions on the 1st parameter (alpha) in OR preferences
-fprintf(settings_file, '%s,%s\n', '0', '1');   % line (12)
+fprintf(settings_file, '%s,%s\n', '0', '1');   % line (13)
 % restrictions on the 2nd parameter (rho) in OR preferences
-fprintf(settings_file, '%s,%s\n', num2str(-HPZ_Constants.infinity), num2str(HPZ_Constants.infinity));   % line (13)
+fprintf(settings_file, '%s,%s\n', num2str(-HPZ_Constants.infinity), num2str(HPZ_Constants.infinity));   % line (14)
 % fix corners (CFGK) or not - default is not
-fprintf(settings_file, '%s\n', '0');   % line (14)
+fprintf(settings_file, '%s\n', '0');   % line (15)
 
 % aggregation_flag for MMI (Max / Mean / AVGSSQ) default is AVGSSQ
-fprintf(settings_file, '%s\n', '3');   % line (15)
+fprintf(settings_file, '%s\n', '3');   % line (16)
 % metric_flag for NLLS (euclidean or CFGK) default is euclidean
-fprintf(settings_file, '%s\n', '1');   % line (16)
+fprintf(settings_file, '%s\n', '1');   % line (17)
 % max_time_estimation in minutes ('0' if there is no limit)
-fprintf(settings_file, '%s\n', '0');   % line (17)
+fprintf(settings_file, '%s\n', '0');   % line (18)
 % min_counter default is the highest possible except for inf
-fprintf(settings_file, '%s\n', num2str(cell2mat(HPZ_Constants.min_counter_values(end))));   % line (18)
+fprintf(settings_file, '%s\n', num2str(cell2mat(HPZ_Constants.min_counter_values(end))));   % line (19)
 % parallel_flag default is false
-fprintf(settings_file, '%s\n', '0');   % line (19)
+fprintf(settings_file, '%s\n', '0');   % line (20)
 
-% output_file_config (NLLS-eaclidean , NLLS-CFGK , MMI-Max , MMI-Mean , MMI-AVGSSQ, BI)
+% output_file_config (NLLS-eaclidean , NLLS-CFGK , NLLS-normalized-eaclidean , MMI-Max , MMI-Mean , MMI-AVGSSQ, BI)
 % default is to print none of them, except for the one being estimated 
-fprintf(settings_file, '%s,%s,%s,%s,%s,%s\n', '0', '0', '0', '0', '0', '0');   % line (20)
+fprintf(settings_file, '%s,%s,%s,%s,%s,%s\n', '0', '0', '0', '0', '0', '0', '0');   % line (21)
 % write_all_flag (default is not to write all, but only the best one)
-fprintf(settings_file, '%s\n', '0');   % line (21)
-% bootstrap_flag (default is without bootstrap)
 fprintf(settings_file, '%s\n', '0');   % line (22)
+% bootstrap_flag (default is without bootstrap)
+fprintf(settings_file, '%s\n', '0');   % line (23)
 
 % residual , in-sample , out-of-sample (only for parameters estimation)  
 % (default is without residuals, but when performing residuals, do both in-sample and out-of-sample) 
-fprintf(settings_file, '%s,%s,%s\n', '0', '1', '1');   % line (23)
+fprintf(settings_file, '%s,%s,%s\n', '0', '1', '1');   % line (24)
 
 
 

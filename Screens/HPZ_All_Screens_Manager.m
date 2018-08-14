@@ -1,4 +1,4 @@
-function [ok, data_matrix, subjects_index, action_flag, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, pref_class, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, max_starting_points, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag] = HPZ_All_Screens_Manager(main_folder, runs_counter)
+function [ok, data_matrix, subjects_index, action_flag, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, pref_class, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, max_starting_points, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag] = HPZ_All_Screens_Manager(main_folder, runs_counter)
 
 % This function calls to all relevant user-interface screens one after
 % another, and returns all the choices and user-preferences received from all of them 
@@ -10,7 +10,7 @@ function [ok, data_matrix, subjects_index, action_flag, GARP_flags, AFRIAT_flags
 
 
 % getting the saved settings
-[save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag] = HPZ_Settings_Read(main_folder);
+[save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag] = HPZ_Settings_Read(main_folder);
 
 % initialization of all returned variables
 % (most of them are read from the settings file (such as function_flag that
@@ -161,7 +161,7 @@ if action_flag == HPZ_Constants.Consistency_action   % Consistency indices
     % here the user can choose which consistency and inconsistency measures
     % to calculate, and whether to calculate residuals for them, and which
     % method of residuals (in sample or out of sample)
-    [GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, ok] = HPZ_Screen_Consistency_Indices(GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, runs_counter);  
+    [GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, ok] = HPZ_Screen_Consistency_Indices(GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, runs_counter);  
     
     % if the user clicked "cancel", stop the program
     if (ok == 0)
@@ -179,7 +179,7 @@ if ((action_flag == HPZ_Constants.NLLS_action) || (action_flag == HPZ_Constants.
     if pref_class == HPZ_Constants.risk_pref
         % the following is specific information needed for the estimation  
         % of risk preferences
-        [risk_numeric_flag, risk_function_flag, risk_param1_restrictions, risk_param2_restrictions, fix_corners, ok] = HPZ_Screen_Functional_Form_Settings_Risk(risk_numeric_flag, risk_function_flag, risk_param1_restrictions, risk_param2_restrictions, fix_corners, runs_counter);
+        [risk_numeric_flag, risk_function_flag, risk_param1_restrictions, risk_param2_restrictions, fix_corners, ok] = HPZ_Screen_Functional_Form_Settings_Risk(action_flag, risk_numeric_flag, risk_function_flag, risk_param1_restrictions, risk_param2_restrictions, fix_corners, runs_counter);
         % fix_corners_save is the value that will be saved in settings
         fix_corners_save = fix_corners;
         % if the user clicked "cancel", stop the program
@@ -194,7 +194,7 @@ if ((action_flag == HPZ_Constants.NLLS_action) || (action_flag == HPZ_Constants.
         % the following is specific information needed for the estimation 
         % of Kurtz et al. (2016) data set.
         fix_corners = false;   % allow corner choices
-        [OR_numeric_flag, OR_function_flag, OR_param1_restrictions, OR_param2_restrictions, ok] = HPZ_Screen_Functional_Form_Settings_OR(OR_numeric_flag, OR_function_flag, OR_param1_restrictions, OR_param2_restrictions, runs_counter);        
+        [OR_numeric_flag, OR_function_flag, OR_param1_restrictions, OR_param2_restrictions, ok] = HPZ_Screen_Functional_Form_Settings_OR(action_flag, OR_numeric_flag, OR_function_flag, OR_param1_restrictions, OR_param2_restrictions, runs_counter);        
         % if the user clicked "cancel", stop the program
         if (ok == 0)
             return
@@ -235,9 +235,9 @@ end
 
 
 
-if (save_user_choices)
+if true%(save_user_choices)
     % saving the user's decisions and settings for next time
-    HPZ_Settings_Write(save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners_save, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config_save, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag, main_folder);
+    HPZ_Settings_Write(save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners_save, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config_save, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag, main_folder);
 end
 
 
