@@ -1,4 +1,4 @@
-function [VARIAN, type, Var_in_sample_residuals] = HPZ_Varian_efficiency_index_approx (expenditure, identical_choice, index_threshold)
+function [VARIAN, type, Var_in_sample_residuals, one_minus_v] = HPZ_Varian_efficiency_index_approx (expenditure, identical_choice, index_threshold)
 
 % this function approximates the Varian inconsistency index when exact
 % calculation has failed.
@@ -6,29 +6,21 @@ function [VARIAN, type, Var_in_sample_residuals] = HPZ_Varian_efficiency_index_a
 
 
 
-% in_sample_residuals = 0;
-
-
-
 % initializations
-
 max_exact = 12;
 
 % number of observations
+[rows, ~] = size(expenditure);
 
-[rows,cols] = size(expenditure);
-
-average_var = 1;
-         
-% average_var_vec = zeros(rows,1);
-         
+% initializations
+average_var = 1;   
 meanssq_var = 1;
-    
-% meanssq_var_vec = zeros(rows,1);
-    
 min_var = 1;
+one_minus_v_avg = ones(rows, 1);
+one_minus_v_meanssq = ones(rows, 1);
+one_minus_v_min = ones(rows, 1);
     
-% min_var_vec  = zeros(rows,1);
+
 
 % Calculating the number of cycles in the data (cycles of size 3 for the
 % case of two goods)
@@ -37,7 +29,7 @@ min_var = 1;
 % between the value of the bundle that was chosen in observation i and the bundle
 % that was chosen in observation j given the prices of observation i
 REF = diag(expenditure) * ones(rows,1)' - expenditure;
- 
+
 % represents the relation R^0.
 DRP = ceil((REF+index_threshold) / (max(max(abs(REF+index_threshold)))+1));
 % SDRP = ceil((REF-index_threshold)/(max(max(abs(REF-index_threshold)))+1));
@@ -309,7 +301,7 @@ if cycles_num <= max_exact
             seconds_left = toc * loop_multiplier;
             if seconds_left > HPZ_Constants.estimated_time_to_print
                 total_minutes_left = round(seconds_left / 60);
-                expected_end_time = addtodate(datenum(start_time), total_minutes_left, 'minute');
+                expected_end_time = addtodate(datenum(start_time), round(seconds_left), 'second');
                 hours_left = floor(total_minutes_left / 60);
                 minutes_left = mod(total_minutes_left, 60);
                 fprintf('%s : Varian Index is calculated using type %i. Estimated time is %i hours and %i minutes - expected to finish in %s.\n', datestr(start_time), 2, hours_left, minutes_left, datestr(expected_end_time));
@@ -320,7 +312,7 @@ if cycles_num <= max_exact
         % the following 'if' is unnecessary since (2*cycles_num +1) was defined as zero, and wasn't changed by 
         % the algorithm. It was originally meant to cut back subsets that necessarily don't 
         % induce the minimum adjustment (as explained earlier).However, here we are going 
-        % through all off the subsets, which might be less efficient.   
+        % through all of the subsets, which might be less efficient.   
         % if check(i,(2*cycles_num+1)) == 0
         
             for j=1:(2*cycles_num)
@@ -343,60 +335,26 @@ if cycles_num <= max_exact
             % observation t).   
             exp_var = expenditure - diag((diag(expenditure)).*(ones(rows,1)-adjustments));
 
-            % building the matrices used to examine GARP_v, similarly to the examination of GARP.   
-            REF = diag(exp_var)*ones(rows,1)' - exp_var;
+            
+            % GARP_v
+            [GARP_v, ~, ~ , ~] = GARP_based_on_expenditures(exp_var, [], index_threshold);
+            
 
-            % notice that DRP here doesn't necessarily represent the entire R_v^0 relation because:
-            %   1.DRP(i,i) isnt  necessarily 1 for every  i.
-            %   2.DRP(i,j) isnt  necessarily 1 for every i,j satisfying (i\=j)and(identical_choice(i,j)=1). 
-            DRP = ceil((REF+index_threshold)/(max(max(abs(REF+index_threshold)))+1));
+            GARP_ERRORS_v = sum(sum(GARP_v));
 
-            % SDRP represents P_v^0
-            SDRP = ceil((REF-index_threshold)/(max(max(abs(REF-index_threshold)))+1));
-
-            set_matlab_bgl_default(struct('full2sparse',1));
-
-            NS_RP = all_shortest_paths(DRP);
-
-            % we want every bundle x^i to be revealed preferred to itself. 
-            RP = eye(rows,rows);
-
-            for j=1:rows
-
-                for k=1:cols
-                    % again, we want every bundle to be revealed preferred to itself.
-                    if (identical_choice(j,k) == 1) && ~(k == j)
-                        RP(j,k) = 1;
-                    end
-                    if ~isinf(NS_RP(j,k)) && ~(k == j)
-
-                        RP(j,k) = 1;
-
-                    end
-
-                end
-
-            end
-
-            % GARP represents GARP_v
-            GARP = RP .* (SDRP');
-
-            GARP_ERRORS = sum(sum(GARP));
-
-            if GARP_ERRORS == 0
+            if GARP_ERRORS_v == 0
 
                 % if GARP_v is satisfied we calculate the indices
 
-                one_minus_v = (ones(rows,1)-adjustments);
+                one_minus_v = (ones(rows,1) - adjustments);
 
                 % if the average parallel shifting of budget lines for subset i is the smallest among 
                 % the subsets checked this fur, so set it as average_var
                 if average_var > mean(one_minus_v) 
 
-                    average_var = mean(one_minus_v);
+                    one_minus_v_avg = one_minus_v;
                     
-                    % calculation of in-samle residuals
-                    average_var_residuals = HPZ_Consistency_Indices_In_Sample_Residuals_Calc (one_minus_v, @mean);
+                    average_var = mean(one_minus_v);
                     
                     % average_var_vec = adjustments;
 
@@ -406,11 +364,10 @@ if cycles_num <= max_exact
                 % is the smallest among the subsets checked this fur, so set it as meanssq_var  
                 if meanssq_var > (sqrt(meansqr(one_minus_v))) 
 
+                    one_minus_v_meanssq = one_minus_v;
+                    
                     meanssq_var = (sqrt(meansqr(one_minus_v)));
                     
-                    % calculation of in-samle residuals
-                    meanssq_var_residuals = HPZ_Consistency_Indices_In_Sample_Residuals_Calc (one_minus_v, @(x) sqrt(meansqr(x)));
-
                     % meanssq_var_vec = adjustments;
 
                 end     
@@ -419,10 +376,9 @@ if cycles_num <= max_exact
                 % among the subsets checked this fur, so set it as min_var  
                 if min_var > max(one_minus_v)
 
-                    min_var = max(one_minus_v);
+                    one_minus_v_min = one_minus_v;
                     
-                    % calculation of in-samle residuals
-                    min_var_residuals = HPZ_Consistency_Indices_In_Sample_Residuals_Calc (one_minus_v, @max);   
+                    min_var = max(one_minus_v);
                     
                     % min_var_vec = adjustments;         
 
@@ -436,14 +392,22 @@ if cycles_num <= max_exact
     
     % assigning to the result variables:
     VARIAN = [min_var, average_var , meanssq_var];
+    
+    % calculation of in-samle residuals
+    min_var_residuals = HPZ_Consistency_Indices_In_Sample_Residuals_Calc (one_minus_v_min, @max); 
+    average_var_residuals = HPZ_Consistency_Indices_In_Sample_Residuals_Calc (one_minus_v_avg, @mean);
+    meanssq_var_residuals = HPZ_Consistency_Indices_In_Sample_Residuals_Calc (one_minus_v_meanssq, @(x) sqrt(meansqr(x)));
     Var_in_sample_residuals = [min_var_residuals , average_var_residuals , meanssq_var_residuals];
 
+    % the best 1-v for each of the aggregators
+    one_minus_v = [one_minus_v_min, one_minus_v_avg, one_minus_v_meanssq];
+    
     
     
 else    % If there are more than 'max_exact' cycles of length 3 then run the  
         % second approximation (type 3)
     
-    [VARIAN, type, Var_in_sample_residuals] = HPZ_Varian_efficiency_index_approx_second (expenditure, identical_choice, index_threshold);
+    [VARIAN, type, Var_in_sample_residuals, one_minus_v] = HPZ_Varian_efficiency_index_approx_second (expenditure, identical_choice, index_threshold);
 
 end
 
