@@ -19,15 +19,21 @@ global current_subject
 
 
 % determining whether to use a single waitbar or a seperate waitbar per subject 
-if (waitbar_options == HPZ_Constants.waitbar_none)
+if (waitbar_options(1) == HPZ_Constants.waitbar_none)
     single_waitbar = false;
     active_waitbar = false;
-elseif (waitbar_options == HPZ_Constants.waitbar_per_subject)
+    bootstrap_waitbar = false;
+    residuals_waitbar = false;
+elseif (waitbar_options(1) == HPZ_Constants.waitbar_per_subject)
     single_waitbar = false;
     active_waitbar = true;
-elseif (waitbar_options == HPZ_Constants.waitbar_single)
+    bootstrap_waitbar = true;
+    residuals_waitbar = true;
+elseif (waitbar_options(1) == HPZ_Constants.waitbar_single)
     single_waitbar = true;
     active_waitbar = false;
+    bootstrap_waitbar = waitbar_options(2);
+    residuals_waitbar = waitbar_options(3);
 end
 
 % precision of numbers when printing
@@ -38,8 +44,10 @@ precision_string = strcat('%10.', num2str(print_precision), 'g');
 % 'stable' is essential to keep the original order of subjects as it is
 % in the file data
 subjects = unique(data_matrix(:,1), 'stable');  % array of subjects' IDs
-% number of subjects
 num_subjects = length(subjects);
+% chosen subjects
+chosen_subjects = subjects(subjects_index);
+chosen_subjects_num = length(subjects_index);
 % an array of location indices - the i'th element 		
 % is the index of the first observation of the subject i 
 [rows,~] = size(data_matrix);
@@ -51,7 +59,6 @@ for i=1:rows
         counter_subjects = counter_subjects + 1;
     end
 end
-chosen_subjects_num = length(subjects_index);
 
 
 
@@ -63,10 +70,12 @@ HPZ_Global_Variables(chosen_subjects_num);
 if (bootstrap_flag)
     % analytic approach is computed faster than numeric, 
     % therefore we allow a bigger sample.
-    if (numeric_flag)
-        number_of_samples = HPZ_Constants.bootstrap_sample_size_numeric;   % 100 samples if numeric  
-    else
-        number_of_samples = HPZ_Constants.bootstrap_sample_size_analytic;   % 1000 samples if analytic 
+    if (numeric_flag == HPZ_Constants.numeric)
+        number_of_samples = HPZ_Constants.bootstrap_sample_size_numeric;        % 100 samples if numeric  
+    elseif (numeric_flag == HPZ_Constants.analytic)
+        number_of_samples = HPZ_Constants.bootstrap_sample_size_analytic;       % 1000 samples if analytic 
+    elseif (numeric_flag == HPZ_Constants.semi_numeric)
+        number_of_samples = HPZ_Constants.bootstrap_sample_size_semi_numeric;   % 500 samples if semi-numeric
     end
 end
 
@@ -105,10 +114,10 @@ if (single_waitbar)
     % disable the per-subject waitbar
     active_waitbar = false;
     % define the waitbar
-    waitbar_name = char(strcat(HPZ_Constants.waitbar_name_estimation, {' - '}, num2str(chosen_subjects_num), {' Subjects '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs), ')'));
+    waitbar_name = char(strcat(HPZ_Constants.waitbar_name_estimation, {' - '}, HPZ_Constants.all_actions_short_names{action_flag}, {' , '}, HPZ_Constants.all_numeric_options_names{numeric_flag+1}, {' '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs), ')'));
     waitbar_msg = char(strcat(HPZ_Constants.waitbar_recovery, 's', {' '}, HPZ_Constants.waitbar_preferences));
     new_bar_val = 0;
-    h_wb = wide_waitbar(new_bar_val, waitbar_msg, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
+    h_wb = wide_waitbar(new_bar_val, {waitbar_msg, '', ''}, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
 end
 
 
@@ -119,9 +128,20 @@ end
 % subject to the results file/s
 for i=1:chosen_subjects_num
     
-    % this index is for the warnings module; we keep a seperate count of
+    
+    % code for a single waitbar instead of multiple waitbars (part 2 out of 3) 
+    if (single_waitbar)
+        % update the waitbar
+        new_bar_val = (i-1) / chosen_subjects_num;
+        current_subject_str = char(strcat({'Estimating Subject '}, num2str(chosen_subjects(i))));
+        waitbar(new_bar_val, h_wb, {waitbar_msg, char(strcat({'Completed '}, num2str(i-1), {' Subjects out of '}, num2str(chosen_subjects_num))), current_subject_str});
+    end
+    
+    
+    % this index is for the warnings module; we keep a separate count of
     % warnings for each subject
     current_subject = i;
+    
     
     % extracting the data that is necessary for all methods and calculations
     if subjects_index(i) < num_subjects
@@ -152,7 +172,7 @@ for i=1:chosen_subjects_num
         % for this new set of observations.
         [me_1, me_2, se_1, se_2, le_1, le_2, ue_1, ue_2] = HPZ_Bootstrap_SE_Helper(data, treatment, number_of_samples, action_flag, ...
                                                                                 function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, ...
-                                                                                aggregation_flag, asymmetric_flag, pref_class, numeric_flag, significance_level, rows_out, active_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points);
+                                                                                aggregation_flag, asymmetric_flag, pref_class, numeric_flag, significance_level, rows_out, bootstrap_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points);
 
         final_output_new = [final_output, me_1, me_2, se_1, se_2, le_1, le_2, ue_1, ue_2];
 
@@ -173,7 +193,7 @@ for i=1:chosen_subjects_num
     if (residual_flag)
         % if the user desired and set so, print the residuals to a separate file
         Mat = HPZ_Estimation_Residuals (action_flag, data, obs_num, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, ...
-                                    aggregation_flag, asymmetric_flag, in_sample_flag, out_sample_flag, param(1), param(2), main_criterion, pref_class, numeric_flag, active_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points);
+                                    aggregation_flag, asymmetric_flag, in_sample_flag, out_sample_flag, param(1), param(2), main_criterion, pref_class, numeric_flag, residuals_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points);
 
         % make sure the Results directory exists, if not - create it
         dir_exists = exist(strcat(main_folder_for_results, '/', HPZ_Constants.results_files_dir) , 'dir');
@@ -219,13 +239,7 @@ for i=1:chosen_subjects_num
 %             warning('In Subject %s , there were (accumulated through all the iterations. criterions per observation) %d NaN criterions, %d -Inf criterions, %d +Inf criterions, %d criterions > 1, %d criterions < 0.', num2str(subjects(i)), warnings_nan(i), warnings_minus_inf(i) ,warnings_plus_inf(i), warnings_bigger_than_1(i) , warnings_smaller_than_0(i));
 %         end
 %     end
-    
-    % code for a single waitbar instead of multiple waitbars (part 2 out of 3) 
-    if (single_waitbar)
-        % update the waitbar
-        new_bar_val = i / chosen_subjects_num;
-        waitbar(new_bar_val, h_wb);
-    end
+
     
 end   % end of loop over chosen subjects
 

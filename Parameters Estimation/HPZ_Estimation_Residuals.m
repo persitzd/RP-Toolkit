@@ -69,7 +69,7 @@ if (active_waitbar)
     waitbar_name = char(strcat(HPZ_Constants.waitbar_name_estimation, {' '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs),')'));
     waitbar_msg = char(strcat(HPZ_Constants.waitbar_recovery, {' '}, num2str(data_matrix(1,1)), {' '}, HPZ_Constants.waitbar_residuals));
     new_bar_val = 0;
-    h_wb = wide_waitbar(new_bar_val, waitbar_msg, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
+    h_wb = wide_waitbar(new_bar_val, {waitbar_msg, ''}, waitbar_name, HPZ_Constants.waitbar_width_multiplier, [0,0.12]);
 end
 
 
@@ -81,14 +81,18 @@ if (in_sample_flag)
     % NLLS
     if action_flag == HPZ_Constants.NLLS_action
         % the optimal cohices for the subject given these parameters
-        if numeric_flag == true
+        if numeric_flag == HPZ_Constants.numeric
             predicted_choices = HPZ_NLLS_Choices_Numeric (param, Choices(:,3:4), endowments, treatment, function_flag, asymmetric_flag, pref_class);
-        else
+        elseif numeric_flag == HPZ_Constants.analytic
             predicted_choices = HPZ_NLLS_Choices_Analytic(param, Choices(:,1:4), function_flag, pref_class);
         end
-        observed_choices = Choices(:,1:2);
+        % (there is no: "numeric_flag == HPZ_Constants.semi_numeric"
+        % since semi-numeric is unique for MMI and BI)
+        
+        %observed_choices = Choices(:,1:2);
+        
         % calculating the NLLS in-sample residuals
-        Mat (:, current_col) = HPZ_NLLS_Criterion_Per_Observation(observed_choices, predicted_choices, metric_flag);
+        Mat (:, current_col) = HPZ_NLLS_Criterion_Per_Observation(Choices, predicted_choices, metric_flag);
         
     % MMI
     elseif action_flag == HPZ_Constants.MMI_action
@@ -135,7 +139,7 @@ if (out_sample_flag)
         % updating the waitbar
         if (active_waitbar)
             new_bar_val = i / obs_num;
-            waitbar(new_bar_val, h_wb);
+            waitbar(new_bar_val, h_wb, {waitbar_msg , char(strcat({'Completed '}, num2str(i), {' observations out of '}, num2str(obs_num)))});
         end
         
     end   % end of loop

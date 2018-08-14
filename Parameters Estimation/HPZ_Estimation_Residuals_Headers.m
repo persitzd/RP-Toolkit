@@ -55,6 +55,8 @@ if action_flag == HPZ_Constants.NLLS_action
         col_headers{4} = 'NLLS Euclidean Criterion';
     elseif metric_flag == HPZ_Constants.CFGK_metric
         col_headers{4} = 'NLLS CFGK Criterion';
+    elseif metric_flag == HPZ_Constants.normalized_euclidean_metric
+        col_headers{4} = 'NLLS normalized-Euclidean Criterion';
     end
 elseif action_flag == HPZ_Constants.MMI_action
     if aggregation_flag == HPZ_Constants.MMI_Max

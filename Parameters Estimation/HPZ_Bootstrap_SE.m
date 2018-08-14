@@ -70,7 +70,7 @@ if (active_waitbar)
     waitbar_name = char(strcat(HPZ_Constants.waitbar_name_estimation, {' '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs), ')'));
     waitbar_msg = char(strcat(HPZ_Constants.waitbar_recovery, {' '}, num2str(data_matrix(1,1)), {' '}, HPZ_Constants.waitbar_bootstrap));
     new_bar_val = 0;
-    h_wb = wide_waitbar(new_bar_val, waitbar_msg, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
+    h_wb = wide_waitbar(new_bar_val, {waitbar_msg, ''}, waitbar_name, HPZ_Constants.waitbar_width_multiplier, [0,0.12]);
 end
 
 for i=1:number_of_samples
@@ -89,7 +89,7 @@ for i=1:number_of_samples
     % updating the waitbar
     if (active_waitbar)
         new_bar_val = i / number_of_samples;
-        waitbar(new_bar_val, h_wb);
+        waitbar(new_bar_val, h_wb, {waitbar_msg , char(strcat({'Completed '}, num2str(i), {' Iterations out of '}, num2str(number_of_samples)))});
     end
 end
 

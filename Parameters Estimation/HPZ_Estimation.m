@@ -346,14 +346,17 @@ for i = 1 : max_index
 %     final_output(i,1) = optimal_parameter_matrix(i, 1);
 %     final_output(i,2) = optimal_parameter_matrix(i, 2);
     
+    %Oriel Notes - for debugging:
+    %optimal_parameter_matrix(i, 1:2) = [0.969678245288051 , -0.342898270799821];
+
     % NLLS Criterion (Euclidean metric, Choi et al. (2007) metric)
-    [final_output(i,3), final_output(i,4), param_NLLS] = HPZ_NLLS_Metrics (optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, fix_corners, asymmetric_flag, pref_class, numeric_flag);
+    [final_output(i,3), final_output(i,4), final_output(i,5), param_NLLS] = HPZ_NLLS_Metrics (optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, fix_corners, asymmetric_flag, pref_class, numeric_flag);
     
     % MMI Criterion (Max Waste, Mean Waste, Sum of Squares Wastes)
-    [final_output(i,5), final_output(i,6), final_output(i,7), param_MMI] = HPZ_MMI_Aggregates(optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, pref_class, numeric_flag);
+    [final_output(i,6), final_output(i,7), final_output(i,8), param_MMI] = HPZ_MMI_Aggregates(optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, pref_class, numeric_flag);
     
     % BI Criterion
-    [final_output(i,8), param_BI] = HPZ_BI_Criterion(optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, pref_class, numeric_flag);
+    [final_output(i,9), param_BI] = HPZ_BI_Criterion(optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, pref_class, numeric_flag);
     
     % When we perform analytic estimation, we somtimes round number,
     % e.g. in Risk (DA) we round beta to -1 when it is close to 1, and in
@@ -385,19 +388,21 @@ if (action_flag == HPZ_Constants.NLLS_action)
         criterion_index = 3;
     elseif (metric_flag == HPZ_Constants.CFGK_metric)
         criterion_index = 4;
+    elseif (metric_flag == HPZ_Constants.normalized_euclidean_metric)
+        criterion_index = 5;
     end
 elseif (action_flag == HPZ_Constants.MMI_action)
     if (aggregation_flag == HPZ_Constants.MMI_Max)
-        criterion_index = 5;
-        elseif (aggregation_flag == HPZ_Constants.MMI_Mean)
         criterion_index = 6;
-    elseif (aggregation_flag == HPZ_Constants.MMI_AVGSSQ)
+        elseif (aggregation_flag == HPZ_Constants.MMI_Mean)
         criterion_index = 7;
+    elseif (aggregation_flag == HPZ_Constants.MMI_AVGSSQ)
+        criterion_index = 8;
     end
 elseif (action_flag == HPZ_Constants.BI_action)
-    criterion_index = 8;
+    criterion_index = 9;
 end
-main_criterion = final_output(1,criterion_index);
+main_criterion = final_output(1, criterion_index);
 
 
 % close the waitbar
