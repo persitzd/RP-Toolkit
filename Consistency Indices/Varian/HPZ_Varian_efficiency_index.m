@@ -288,8 +288,8 @@ for i=1:(2^counter_adj)
         REF = diag(exp_var)*ones(rows,1)' - exp_var;
 
         % notice that DRP here doesn't necessarily represent the entire R_v^0 relation because:
-        %   1.DRP(i,i) isn’t  necessarily 1 for every  i.
-        %   2.DRP(i,j) isn’t  necessarily 1 for every i,j satisfying (i\=j)and(identical_choice(i,j)=1). 
+        %   1.DRP(i,i) isnÂ’t  necessarily 1 for every  i.
+        %   2.DRP(i,j) isnÂ’t  necessarily 1 for every i,j satisfying (i\=j)and(identical_choice(i,j)=1). 
 
         DRP = ceil((REF+index_threshold) / (max(max(abs(REF+index_threshold)))+1));
         % SDRP represents P_v^0
