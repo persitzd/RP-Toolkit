@@ -1,4 +1,4 @@
-function [HM, HM_exact] = HPZ_Houtman_Maks_efficiency_index_approx (Choices, index_threshold)
+function [HM, HM_raw, HM_exact] = HPZ_Houtman_Maks_efficiency_index_approx (DRP, SDRP) %#ok<INUSD>
 
 % this function estimates the Houtman-Maks inconsistency index when exact
 % calculation has failed.
@@ -25,48 +25,40 @@ function [HM, HM_exact] = HPZ_Houtman_Maks_efficiency_index_approx (Choices, ind
 
 % trials is set to be the number of rows of matrix Choices, meaning m, the 
 % number of observations for a single subject.
+[trials,~] = size(DRP);
 
-[trials,~] = size(Choices);
-
-% The matrix "expenditure" has at the cell in the i'th row and the j'th
-% column, the value of the bundle that was chosen in observation j given the
-% prices of observation i
-
-expenditure = (Choices(:,1)*Choices(:,3)' + Choices(:,2)*Choices(:,4)')';
-
-% The matrix REF has at the cell in the i'th row and the j'th
-% column, the difference between the value of the bundle that was chosen in 
-% observation i and the bundle that was chosen in observation j given the 
-% prices of observation i
-
-REF = diag(expenditure) * ones(trials,1)' - expenditure;
-
-% The matrix DRP has at the cell in the i'th row and the j'th column, 1 if and only if the 
-% bundle that was chosen in observation i is directly revealed preferred to the bundle 
-% that was chosen in observation j, and 0 otherwise.
-
-DRP = ceil((REF+index_threshold) / (max(max(abs(REF+index_threshold)))+1));
+% % The matrix "expenditure" has at the cell in the i'th row and the j'th
+% % column, the value of the bundle that was chosen in observation j given the
+% % prices of observation i
+% expenditure = (Choices(:,1)*Choices(:,3)' + Choices(:,2)*Choices(:,4)')';
+% 
+% % The matrix REF has at the cell in the i'th row and the j'th
+% % column, the difference between the value of the bundle that was chosen in 
+% % observation i and the bundle that was chosen in observation j given the 
+% % prices of observation i
+% REF = diag(expenditure) * ones(trials,1)' - expenditure;
+% 
+% % The matrix DRP has at the cell in the i'th row and the j'th column, 1 if and only if the 
+% % bundle that was chosen in observation i is directly revealed preferred to the bundle 
+% % that was chosen in observation j, and 0 otherwise.
+% DRP = ceil((REF+index_threshold) / (max(max(abs(REF+index_threshold)))+1));
 
 
 % DRP_num sums the values of DRP cells, meaning the number of cases where 
-% a bundle is directly revealed preferred to another bundle.     
-
+% a bundle is directly revealed preferred to another bundle.
 DRP_num = sum(sum(DRP));
 
 % input is the matrix of all pairs of bundles number i,j such that x^i is
 % directly revealed preferred to x^j. 
 % The input matrix has two cells in every row, each contains a number of 
 % a bundle, i,j so that x^i is directly revealed preferred to x^j.
-
 input = zeros(DRP_num,2);
 
-% If one wants to insert the p^0 relation use SDRP
+% % If one wants to insert the p^0 relation use SDRP
+% SDRP = ceil((REF-index_threshold)/(max(max(abs(REF-index_threshold)))+1));
+% SDRP_num = sum(sum(SDRP));
+% input=zeros(SDRP_num,2);
 
-%% SDRP = ceil((REF-index_threshold)/(max(max(abs(REF-index_threshold)))+1));
-
-%% SDRP_num = sum(sum(SDRP));
-
-%% input=zeros(SDRP_num,2);
 
 index = 1;
 
@@ -95,7 +87,8 @@ end
 
 % the HM index is calculated as the number of removed relatively to the number of 
 % observations.
-HM = SumRemovals(1,1) / trials;
+HM_raw = SumRemovals(1,1);
+HM = HM_raw / trials;
 
 % the calculation is not exact, but it is an approximation
 HM_exact = 0;

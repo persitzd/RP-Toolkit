@@ -1,4 +1,4 @@
-function [HM, HM_exact, HM_residuals] = HPZ_Houtman_Maks_efficiency_index (Choices, index_threshold, residuals_flag)
+function [HM, HM_residuals, HM_raw, HM_raw_residuals, HM_exact] = HPZ_Houtman_Maks_efficiency_index (residuals_flag, DRP, SDRP, is_2_goods)
 
 % this function calculates the Houtman-Maks inconsistency index
 % if the calculation seems to be taking too long, it will return an
@@ -62,29 +62,56 @@ function [HM, HM_exact, HM_residuals] = HPZ_Houtman_Maks_efficiency_index (Choic
 % To avoid confusion the function now returns, on top of the index, a flag 
 % that reports whether the index is accurate or an upper bound approximation. 
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% % number of observations
+% [obs_num , ~] = size(DRP);
+% 
+% % The matrix "expenditure" has at the cell in the i'th row and the j'th column, the value of 
+% % the observation j given the prices of observation i
+% expenditure = (Choices(:,1)*Choices(:,3)' + Choices(:,2)*Choices(:,4)')';
+% 
+% % The matrix REF has at the cell in the i'th row and the j'th column, 
+% % the difference between the value of the bundle of observation i and 
+% % the bundle of observation j given the prices of observation i
+% REF = diag(expenditure) * ones(obs_num,1)' - expenditure;
+% 
+% % DRP(i,j)=1 iff the bundle i is directly revealed preferred to 
+% % the bundle j (for a index_threshold small enough). See detailed explanation
+% % in HPZ_Subject_Consistency
+% %DRP = ceil((REF+index_threshold) / (max(max(abs(REF+index_threshold)))+1));
+% DRP = (REF + diag(expenditure)*ones(obs_num,1)'*index_threshold >= 0) * 1;
+% 
+% % The matrix SDRP has at the cell in the i'th row and the j'th column, 1 if and only if the 
+% % bundle of observation i is strictly directly revealed preferred to the bundle of observation 
+% % j , and 0 otherwise.
+% %SDRP = ceil((REF-index_threshold) / (max(max(abs(REF-index_threshold)))+1));
+% SDRP = (REF - diag(expenditure)*ones(obs_num,1)'*index_threshold > 0) * 1;
+
+
 
 % First we go with the exhaustive search.
 % number_trials is the number of trials in the largest subset we'll check.
 % subsets is the number of subsets that we check directly.
-
 max_subsets = 10000000;
 
 % trials is set to be the number of rows of matrix Choices, meaning m, the 
 % number of observations for a single subject.
-
-[trials,~] = size(Choices);
+[trials,~] = size(DRP);
 
 subsets = 0;
 
 % loop for i decreasing by 1 from (m-1) to 1, going through all of the subsets at size i, in 
 % order to find the number of observations which satisfies that:
 % a. the number of subsets of size strictly higher than i and smaller or equal to (m-1), is not 
-% more than the max_subsets.  
+%    more than the max_subsets.
 % b. the number of subsets of size higher or equal to i and smaller or equal to (m-1), is 
-% more than the max_subsets.  
+%    more than the max_subsets.
 
-for i=(trials-1):-1:1
+%for i=(trials-1):-1:1
+for i=trials:-1:1
     
     % trials choose i is the number of options for subsets of size i chosen from a set with 'trial' members.
     subsets_temp = subsets + nchoosek(trials,i);
@@ -101,9 +128,9 @@ for i=(trials-1):-1:1
     
 end
 
-% subsets_matrix holds in each row one subset of the require size
+% subsets_matrix holds in each row one subset of the required size
 
-% vector_of_trials=[1,2,3,4,â€¦,trials]
+% vector_of_trials=[1,2,3,4,…,trials]
 vector_of_trials = 1:1:trials;
 
 % start measuring time, in order to estimate total time the process will take 
@@ -118,22 +145,24 @@ start_time = fix(start_time);
 HM_found_flag = 0;
 
 % initialization of residuals
+HM_raw_residuals = zeros(trials, 1);
 HM_residuals = zeros(trials, 1);
 
 % loop for j decreasing by 1 from (m-1) to number_trials.  
 % Every time it will "deal" with subsets of the same size (j), and look for a subset that satisfies GARP
-j = trials-1;
+%j = trials-1;
+j = trials;
 while (j >= number_trials) && (~HM_found_flag)
     
     % measuring the time after the first loop, to estimate total time
     if j == (trials-2)
         total_size_of_loop = subsets;
-        total_size_of_sampled_loop = nchoosek(trials,1);
+        total_size_of_sampled_loop = 1+nchoosek(trials,1);
         loop_multiplier = total_size_of_loop / total_size_of_sampled_loop;
         seconds_left = toc * loop_multiplier;
         if seconds_left > HPZ_Constants.estimated_time_to_print
             total_minutes_left = round(seconds_left / 60);
-            expected_end_time = addtodate(datenum(start_time), total_minutes_left, 'minute');
+            expected_end_time = addtodate(datenum(start_time), round(seconds_left), 'second');
             hours_left = floor(total_minutes_left / 60);
             minutes_left = mod(total_minutes_left, 60);
             fprintf('%s : HOUTMAN-MAKS Index is calculated using type %i. Maximal Estimated time is %i hours and %i minutes - expected to finish up to %s.\n', datestr(start_time), 1, hours_left, minutes_left, datestr(expected_end_time));
@@ -141,14 +170,12 @@ while (j >= number_trials) && (~HM_found_flag)
     end
     
     % every row in the subsets_matrix is an option for a subset of observations numbers with j members, 
-    % from the set of all observations numbers (for example: {1,2,3,4,â€¦j} or {2,3,4,5,â€¦,j+1}). 
+    % from the set of all observations numbers (for example: {1,2,3,4,…j} or {2,3,4,5,…,j+1}). 
     % The matrix includes all of the options for sets of observations numbers of size j.    
     % matrix size: (vector_of_trials choose j) x j. 
     % note: 1. Every subset is ordered in ascending order. 
     %       2. setting the options in the matrix induces a certain order of the options.  
-    
     subsets_matrix = nchoosek(vector_of_trials,j);
-    
     [rows,~] = size(subsets_matrix);
     
     % The loop goes through every option of a subset of size j and checks if 
@@ -168,8 +195,7 @@ while (j >= number_trials) && (~HM_found_flag)
         % The new_choices matrix is a "partial" matrix of Choices, 
         % as it includes only the rows suited for the observations that 
         % belong to the subset.   
-        
-        new_choices = Choices(subsets_matrix(k,:),:); 
+        %new_choices = Choices(subsets_matrix(k,:),:); 
         
         % we will henceforth refer to the bundle of the observation in the i'th 
         % row of "new_choices" matrix (meaning: (new_choices(i,1),new_choices(i,2)) ), 
@@ -178,80 +204,53 @@ while (j >= number_trials) && (~HM_found_flag)
         
         % The matrix "expenditure" has at the cell in the i'th row and the j'th column, the value of 
         % the observation j* given the prices of observation i*
-        
-        new_expenditure = (new_choices(:,1)*new_choices(:,3)' + new_choices(:,2)*new_choices(:,4)')';
+        %new_expenditure = (new_choices(:,1)*new_choices(:,3)' + new_choices(:,2)*new_choices(:,4)')';
         
         % The matrix REF has at the cell in the i'th row and the j'th column, 
         % the difference between the value of the bundle of observation i* and 
         % the bundle of observation j* given the prices of observation i*
-        
-        new_REF = diag(new_expenditure) * ones(j,1)' - new_expenditure;
+        %new_REF = diag(new_expenditure) * ones(j,1)' - new_expenditure;
         
         % new_DRP(i,j)=1 iff the bundle i* is directly revealed preferred to 
         % the bundle j (for a index_threshold small enough). See detailed explanation
         % in HPZ_Subject_Consistency
-        
-        new_DRP = ceil((new_REF+index_threshold) / (max(max(abs(new_REF+index_threshold)))+1));
-        
+        %new_DRP = ceil((new_REF+index_threshold) / (max(max(abs(new_REF+index_threshold)))+1));
+        %new_DRP = (new_REF + diag(new_expenditure)*ones(j,1)'*index_threshold >= 0) * 1;
+        new_DRP = DRP(subsets_matrix(k,:) , subsets_matrix(k,:));
+
         % The matrix new_SDRP has at the cell in the i'th row and the j'th column, 1 if and only if the 
         % bundle of observation i* is strictly directly revealed preferred to the bundle of observation 
         % j* , and 0 otherwise.
+        %new_SDRP = ceil((new_REF-index_threshold) / (max(max(abs(new_REF-index_threshold)))+1));
+        %new_SDRP = (new_REF - diag(new_expenditure)*ones(j,1)'*index_threshold > 0) * 1;
+        new_SDRP = SDRP(subsets_matrix(k,:) , subsets_matrix(k,:));
         
-        new_SDRP = ceil((new_REF-index_threshold) / (max(max(abs(new_REF-index_threshold)))+1));
         
-        % statement needed for the graph theory external package to work efficiently
-        
-        set_matlab_bgl_default(struct('full2sparse',1));
-        
-        % The matrix new_NS_RP has at the cell in the i'th row and the j'th column, Inf if and only if the 
-        % bundle of observation i* is not revealed preferred to the bundle of observation j*. 
-        % otherwise it includes a positive integer.
-        
-        new_NS_RP = all_shortest_paths(new_DRP);
-        
-        % The matrix new_RP has at the cell in the i'th row and the j'th column, 
-        % 1 if and only if the bundle i* is revealed preferred to the bundle j*. 
-        % Otherwise, it equals 0.      
-        
-        new_RP = zeros(j);
-        
-        for l=1:j
-
-            % going through all new_NS_RPâ€™s cells.
+        if is_2_goods
             
-            for m=1:j
+            % The matrix is the zero matrix if and only if GARP is satisfied.
+            % when there are only 2 goods, breaking the 2-length cycles
+            % ensures that all longer cycles are broken as well, so we can
+            % use DRP and have no need to calculate RP
+            GARP = new_DRP .* (new_SDRP');
+            
+        else
 
-                if ~isinf(new_NS_RP(l,m))
+            % The matrix is the zero matrix if and only if GARP is satisfied.
+            [GARP, ~] = GARP_based_on_DRP_and_SDRP(DRP, SDRP);
 
-                    % if the length of the path from j to k is 
-                    % finite, meaning there is a path from j to k (or in 
-                    % other words bundle j* is revealed preferred to bundle
-                    % k*), then RP(j,k)=1, otherwise RP(j,k) stays 0. 
-                    
-                    new_RP(l,m) = 1;
-
-                end
-              
-            end
-          
         end
-
-        % The matrix is the zero matrix if and only if GARP is satisfied.
-      
-        GARP = new_RP .* (new_SDRP');
-
+        
+        
         % A flag that keeps the GARP result. It is 0 if and only if the data satisfies GARP.
-      
         GARP_FLAG = 1;
 
         % GARP_ERRORS sums the values of all matrix GARP's cells. Counting 
         % the number of violations (notice that a pair of bundles x^i*,x^j* might be counted 
         % as two violations; one for (i,j), and the other for (j,i)).
-
         GARP_ERRORS = sum(sum(GARP));
 
         % If the GARP matrix is only zeros then the data satisfies GARP      
-      
         if GARP_ERRORS == 0
 
             GARP_FLAG = 0;
@@ -265,7 +264,8 @@ while (j >= number_trials) && (~HM_found_flag)
             % observations.
             
             % HM index
-            HM = (trials - j) / trials;
+            HM_raw = (trials - j);
+            HM = HM_raw / trials;
             
             % the calculation of the HM index is exact. 
             HM_exact = 1;
@@ -273,14 +273,14 @@ while (j >= number_trials) && (~HM_found_flag)
             if residuals_flag
                 % we don't need to check smaller subsets of the data
                 HM_found_flag = 1;
-                % HM residuals per observation
+                % HM raw residuals per observation
                 % it is enough that the observation will NOT appear in one
                 % subset (that is - will be truncated in one subset)
-                % , for it to have a residual of 1 instead of 0
+                % , for it to have a raw residual of 1 instead of 0
                 observations_subset = zeros(1,trials);
                 observations_subset(subsets_matrix(k,:)) = 1;
-                HM_residuals_indexes = ~observations_subset;
-                HM_residuals(HM_residuals_indexes) = 1;
+                HM_raw_residuals_indices = ~observations_subset;
+                HM_raw_residuals(HM_raw_residuals_indices) = 1;
             else
                 % no need to calculate residuals -
                 % the loops are stopped. We return HM and exact=1.           
@@ -300,8 +300,7 @@ end
 j = j + 1;
 % we modify the raw residuals ( 0 or 1 ) 
 % to actual residuals ( (trials-j)/(trials-1) or (trials-(j+1))/(trials-1) )   
-HM_residuals(:) = (trials - (j + HM_residuals(:))) / (trials-1);
-
+HM_residuals = (trials - (j + HM_raw_residuals)) / (trials-1);
 
 % If we were not able to directly compute the index, we have to approximate.
 % And this is done here using HoutmanMaksCFGK.m that was written by Daniel Martin. 
@@ -323,7 +322,17 @@ HM_residuals(:) = (trials - (j + HM_residuals(:))) / (trials-1);
 % us an upper bound of the number of observations one must remove to eliminate all GARP cycles .  
 
 if (GARP_FLAG) && (~HM_found_flag)
-    [HM, HM_exact] = HPZ_Houtman_Maks_efficiency_index_approx (Choices, index_threshold);
+    [HM, HM_raw, HM_exact] = HPZ_Houtman_Maks_efficiency_index_approx (DRP, SDRP);
+    % if we need to calculate residuals, we calculate them naively (since the approx approach is very fast anyway) 
+    if residuals_flag
+        for i=1:trials
+            truncated_DRP = vertcat(DRP(1:(i-1),:) , DRP((i+1):obs_num,:));
+            truncated_SDRP = vertcat(SDRP(1:(i-1),:) , SDRP((i+1):obs_num,:));
+            [~, truncated_HM_raw, ~] = HPZ_Houtman_Maks_efficiency_index_approx (truncated_DRP, truncated_SDRP);
+            HM_raw_residuals = HM_raw - truncated_HM_raw;
+        end
+        HM_residuals = (trials - (j + HM_raw_residuals)) / (trials-1);
+    end
 end
 
 end
