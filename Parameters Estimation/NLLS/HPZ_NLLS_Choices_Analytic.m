@@ -291,11 +291,76 @@ if pref_class == HPZ_Constants.risk_pref
             
             % p = p1 / p2 = Max_Y / Max_X
             p = max_2 / max_1;
-
             
+            % threshold for the CARA parameter (A). 
+            % Cases 17, 18 and 19 in the DA-2 Document refer to the case where A approaches 0. 
+            % However, the distinction between A values that are close to zero
+            % and those that are not, depend on the value of x.
+            % Therefore, the threshold in the code is on the multiplication of
+            % A and x.
+            % As a value for x we take min(x) and not max(x) because they are both in a
+            % negative power and therefore min(x) is more dominant than max(x).
+            % If A*min(x)>0 is less than this threshold, we use the cases as stated 
+            % in the document. 
+            % However if A*min(x)=0 we do the same using A*max(x).
+            A_threshold = eps * 2^22;   % 2^(-30)
+            
+            %% A -> 0 - CASEs 17, 18, 19
+            if A >= 0 && ( ( min(max_1, max_2) > 0 && A*min(max_1, max_2) < A_threshold ) || ( min(max_1, max_2) == 0 && A*max(max_1, max_2) < A_threshold ) )
+                
+                sum_prices = 1 / max_1 + 1 / max_2;
+                
+                if beta > 0   % CASE 17
+                    
+                    if p < (1 / (1+beta))
+                        choice_matrix(i,:) = [max_1, 0];
+                    elseif p >= (1 / (1+beta)) && p <= (1+beta) 
+                        choice_matrix(i,:) = [1 / sum_prices, 1 / sum_prices];
+                    else  % p > (1+beta) 
+                        choice_matrix(i,:) = [0, max_2];
+                    end
+                    
+                elseif beta == 0   % CASE 18
+                    
+                    if p < 1
+                        choice_matrix(i,:) = [max_1, 0];
+                    elseif p == 1 
+                        % every choice on the budget line is an optimal choice
+                        choice_matrix(i,:) = observed_bundle(i,:); % Error is 0
+                    else  % p > 1
+                        choice_matrix(i,:) = [0, max_2];
+                    end
+                    
+                else % beta < 0 , CASE 19
+                    
+                    if p < 1
+                        choice_matrix(i,:) = [max_1, 0];
+                    elseif p == 1
+                        % there are 2 optimal choices, one with
+                        % x1* >= x2* and one with x2* >= x1*.
+                        % Therefore the error is the distance between the
+                        % observed bundle to the *nearest* of these 2.
+                        % Therefore, if the observed bundle has x1 >= x2, he
+                        % must be closer to the optimal bundle with x1* >= x2*,
+                        % and vice versa.
+                        if observed_bundle(i, 1) >= observed_bundle(i, 2)
+                            % x1 >= x2, therefore we take the
+                            % optimal bundle such that x1* >= x2*
+                            choice_matrix(i,:) = [max_1, 0];
+                        else
+                            % x2 >= x1, therefore we take the
+                            % optimal bundle such that x2* >= x1*
+                            choice_matrix(i,:) = [0, max_2];
+                        end
+                    else  % p > 1
+                        choice_matrix(i,:) = [0, max_2];
+                    end
+                    
+                end
+                
             %% non-negative beta - CASE 14 (CASE 17 and CASE 18 are included)
-            if beta >= 0
-
+            elseif beta >= 0
+                
                 if p < (exp(-A*max_1) / (1+beta))
                     % x1* = Max_X
                     % x2* = 0
@@ -326,19 +391,54 @@ if pref_class == HPZ_Constants.risk_pref
 
             %% negative beta - CASE 15 (some of CASE 19 is included)
             elseif beta > -1 && beta < 0
-                if p < (exp(-A*max_1) / (1+beta))
-                    % x1* = Max_X
-                    % x2* = 0
-                    choice_matrix(i,:) = [max_1, 0];
-
-                elseif p >= (exp(-A*max_1) / (1+beta)) && p < 1
-                    % x1* = 1/(p+1) * (Max_Y - (1/a)*ln(p*(1+beta)))
-                    choice_matrix(i,1) = (max_2 - (log(p*(1+beta))) / A ) / (1+p);
-                    % x2* = 1/(p+1) * (Max_Y + (p/a)*ln(p*(1+beta)))
-                    choice_matrix(i,2) = (max_2 + (p*log(p*(1+beta))) / A ) / (1+p); 
-
-                elseif p == 1
-                   % there are 2 optimal choices, one with 
+                
+                p1 = 1 / max_1;
+                p2 = 1 / max_2;
+                % how much can we buy if we take equal quantities from both goods 
+                max_both = 1 / (p1 + p2);
+                
+                % this is the solution, assuming x1 >= x2, and without
+                % the restrictions of x1,x2 >= 0
+                x1_bigger_solution = [0,0];
+                % x1* = 1/(p+1) * (Max_Y - (1/a)*ln(p*(1+beta)))
+                x1_bigger_solution(1) = (max_2 - (log(p*(1+beta))) / A ) / (1+p);
+                % x2* = 1/(p+1) * (Max_Y + (p/a)*ln(p*(1+beta)))
+                x1_bigger_solution(2) = (max_2 + (p*log(p*(1+beta))) / A ) / (1+p);
+                % if the solution is such that x2 < 0, then we "compromise"
+                % on a solution with x2 = 0
+                if x1_bigger_solution(2) < 0
+                    x1_bigger_solution(1) = max_1;
+                    x1_bigger_solution(2) = 0;
+                % if the solution is such that x2 > x1, then we "compromise"
+                % on a solution with x2 = x1
+                elseif x1_bigger_solution(2) > x1_bigger_solution(1)
+                    x1_bigger_solution(1) = max_both;
+                    x1_bigger_solution(2) = max_both;
+                end
+                
+                % this is the solution, assuming x2 >= x1, and without
+                % the restrictions of x1,x2 >= 0
+                x2_bigger_solution = [0,0];
+                % x1* = 1/(p+1) * (Max_Y - (1/a)*ln(p/(1+beta)))
+                x2_bigger_solution(1) = (max_2 - (log(p/(1+beta))) / A ) / (1+p); 
+                % x2* = 1/(p+1) * (Max_Y + (p/a)*ln(p/(1+beta)))
+                x2_bigger_solution(2) = (max_2 + (p*log(p/(1+beta))) / A ) / (1+p); 
+                % if the solution is such that x1 < 0, then we "compromise"
+                % on a solution with x1 = 0
+                if x2_bigger_solution(1) < 0
+                    x2_bigger_solution(1) = 0;
+                    x2_bigger_solution(2) = max_2;
+                % if the solution is such that x1 > x2, then we "compromise"
+                % on a solution with x1 = x2
+                elseif x2_bigger_solution(1) > x2_bigger_solution(2)
+                    x2_bigger_solution(1) = max_both;
+                    x2_bigger_solution(2) = max_both;
+                end
+                
+                
+                if p == 1
+                    
+                    % there are 2 optimal choices, one with 
                    % x1* >= x2* and one with x2* >= x1*.  
                    % Therefore the error is the distance between the 
                    % observed bundle to the *nearest* of these 2.
@@ -348,32 +448,76 @@ if pref_class == HPZ_Constants.risk_pref
                    if observed_bundle(i, 1) >= observed_bundle(i, 2)
                        % x1 >= x2, therefore we take the
                        % optimal bundle such that x1* >= x2*
-                       
-                       % x1* = 1/2 * (Max_Y - (1/a)*ln(1+beta))
-                       choice_matrix(i,1) = (max_2 - log(1+beta) / A ) / 2;
-                       % x2* = 1/2 * (Max_Y + (1/a)*ln(1+beta))
-                       choice_matrix(i,2) = (max_2 + log(1+beta) / A ) / 2; 
+                       choice_matrix(i,1:2) = x1_bigger_solution(1:2);
                    else
                        % x2 >= x1, therefore we take the
                        % optimal bundle such that x2* >= x1*
-                       
-                       % x1* = 1/2 * (Max_Y + (1/a)*ln(1+beta))
-                       choice_matrix(i,1) = (max_2 + log(1+beta) / A ) / 2;
-                       % x2* = 1/2 * (Max_Y - (1/a)*ln(1+beta))
-                       choice_matrix(i,2) = (max_2 - log(1+beta) / A ) / 2; 
+                       choice_matrix(i,1:2) = x2_bigger_solution(1:2);
                    end
-
-                elseif p > 1 && p <= (1+beta)*exp(A*max_2)
-                    % x1* = 1/(p+1) * (Max_Y - (1/a)*ln(p/(1+beta)))
-                    choice_matrix(i,1) = (max_2 - (log(p/(1+beta))) / A ) / (1+p); 
-                    % x2* = 1/(p+1) * (Max_Y + (p/a)*ln(p/(1+beta)))
-                    choice_matrix(i,2) = (max_2 + (p*log(p/(1+beta))) / A ) / (1+p); 
-
-                elseif p > (exp(A*max_2) * (1+beta))
-                    % x1* = 0
-                    % x2* = Max_Y
-                    choice_matrix(i,:) = [0, max_2];
+                    
+                elseif p < 1
+                    
+                    % we take the optimal bundle such that x1* >= x2*,
+                    % since x1 is cheaper than x2
+                    choice_matrix(i,1:2) = x1_bigger_solution(1:2);
+                    
+                else % p > 1
+                    
+                    % we take the optimal bundle such that x2* >= x1*,
+                    % since x2 is cheaper than x1
+                    choice_matrix(i,1:2) = x2_bigger_solution(1:2);
+                    
                 end
+                
+                
+%                 if p < (exp(-A*max_1) / (1+beta))
+%                     % x1* = Max_X
+%                     % x2* = 0
+%                     choice_matrix(i,:) = [max_1, 0];
+% 
+%                 elseif p >= (exp(-A*max_1) / (1+beta)) && p < 1
+%                     % x1* = 1/(p+1) * (Max_Y - (1/a)*ln(p*(1+beta)))
+%                     choice_matrix(i,1) = (max_2 - (log(p*(1+beta))) / A ) / (1+p);
+%                     % x2* = 1/(p+1) * (Max_Y + (p/a)*ln(p*(1+beta)))
+%                     choice_matrix(i,2) = (max_2 + (p*log(p*(1+beta))) / A ) / (1+p); 
+%                     
+%                 elseif p == 1
+%                    % there are 2 optimal choices, one with 
+%                    % x1* >= x2* and one with x2* >= x1*.  
+%                    % Therefore the error is the distance between the 
+%                    % observed bundle to the *nearest* of these 2.
+%                    % Therefore, if the observed bundle has x1 >= x2, he
+%                    % must be closer to the optimal bundle with x1* >= x2*,
+%                    % and vice versa.
+%                    if observed_bundle(i, 1) >= observed_bundle(i, 2)
+%                        % x1 >= x2, therefore we take the
+%                        % optimal bundle such that x1* >= x2*
+%                        
+%                        % x1* = 1/2 * (Max_Y - (1/a)*ln(1+beta))
+%                        choice_matrix(i,1) = (max_2 - log(1+beta) / A ) / 2;
+%                        % x2* = 1/2 * (Max_Y + (1/a)*ln(1+beta))
+%                        choice_matrix(i,2) = (max_2 + log(1+beta) / A ) / 2; 
+%                    else
+%                        % x2 >= x1, therefore we take the
+%                        % optimal bundle such that x2* >= x1*
+%                        
+%                        % x1* = 1/2 * (Max_Y + (1/a)*ln(1+beta))
+%                        choice_matrix(i,1) = (max_2 + log(1+beta) / A ) / 2;
+%                        % x2* = 1/2 * (Max_Y - (1/a)*ln(1+beta))
+%                        choice_matrix(i,2) = (max_2 - log(1+beta) / A ) / 2; 
+%                    end
+% 
+%                 elseif p > 1 && p <= (1+beta)*exp(A*max_2)
+%                     % x1* = 1/(p+1) * (Max_Y - (1/a)*ln(p/(1+beta)))
+%                     choice_matrix(i,1) = (max_2 - (log(p/(1+beta))) / A ) / (1+p); 
+%                     % x2* = 1/(p+1) * (Max_Y + (p/a)*ln(p/(1+beta)))
+%                     choice_matrix(i,2) = (max_2 + (p*log(p/(1+beta))) / A ) / (1+p); 
+% 
+%                 elseif p > (exp(A*max_2) * (1+beta))
+%                     % x1* = 0
+%                     % x2* = Max_Y
+%                     choice_matrix(i,:) = [0, max_2];
+%                 end
 
             %% beta is equal to -1 - CASE 16 (some of CASE 19 is included)
             elseif beta == -1
@@ -417,10 +561,12 @@ elseif pref_class == HPZ_Constants.OR_pref   % other regarding preferences
     % we need these threshold in order to avoid precision of print problems. 
     % for more detailed, see the documentation in "HPZ_Constants".
     if abs(param(1) - 1) < HPZ_Constants.print_threshold
-        param(1) = -1;
+        param(1) = 1;
     end
     if abs(param(2) - 1) < HPZ_Constants.print_threshold
         param(2) = 1;
+    elseif abs(param(2) - (-1)) < HPZ_Constants.print_threshold
+        param(2) = -1;
     end
     
     %% CES
@@ -455,8 +601,7 @@ elseif pref_class == HPZ_Constants.OR_pref   % other regarding preferences
         % alpha / (1 - alpha)
         alpha_ratio = alpha / (1-alpha);
         % Elasticity of substitution (when rho ~= 0,1)
-        EOS = 1 / (1 - rho);
-        
+        EOS = 1 / (1 - rho); 
         
         % this loop goes one set (of prices and endowment) after another,
         % and calculates the optimal choice for each of them
@@ -469,25 +614,6 @@ elseif pref_class == HPZ_Constants.OR_pref   % other regarding preferences
             
             % p = p1 / p2 = Max_Y / Max_X
             p = Max_Y / Max_X;
-                        
-            % this epsilon is the threshold for deciding when a value of alpha
-            % or rho is close to enough to 0 or to 1, to be considered 0 or 1,
-            % respectively
-            epsilon = eps * 2^12;   % 2^(-40)
-
-            % rounding rho to 0 or to 1 when needed
-            if (abs(rho) < epsilon)
-                rho = 0;
-            elseif (abs(rho-1) < epsilon)
-                rho = 1;
-            end
-
-            % rounding alpha to 0 or to 1 when needed
-            if (alpha < epsilon)
-                alpha = 0;
-            elseif (1-alpha < epsilon)
-                alpha = 1;
-            end
             
             
             if alpha == 0   %alpha <= 10^(-6)
@@ -531,7 +657,7 @@ elseif pref_class == HPZ_Constants.OR_pref   % other regarding preferences
                     % one of the prices ratios he was exposed to, we
                     % decided not to change this, as to be consistent with
                     % our decision not to change it in CASE 5 in CRRA)
-                    choice_matrix(i,:) = observed_bundle;
+                    choice_matrix(i,:) = observed_bundle(i,:);
                     
                 end
                 

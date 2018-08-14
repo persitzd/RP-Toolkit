@@ -23,6 +23,8 @@ if metric_flag == HPZ_Constants.euclidean_metric
 elseif metric_flag == HPZ_Constants.CFGK_metric
     criterions = HPZ_NLLS_Criterion_Ldr(observations, optimal_bundles); 
     %(ldr_chosen - ldr_predicted).^2;
+elseif metric_flag == HPZ_Constants.normalized_euclidean_metric
+    criterions = HPZ_NLLS_Criterion_Euclid_normalized(observations, optimal_bundles); 
 end
 
 
