@@ -5,7 +5,7 @@ function Index = HPZ_Afriat_efficiency_index (expenditure, index_threshold)
 
 
 
-num_of_iterations = 30;
+num_of_iterations = 50;
 
 AFRIAT_UPPER = 1; % The maximum value for Afriat index.
 
