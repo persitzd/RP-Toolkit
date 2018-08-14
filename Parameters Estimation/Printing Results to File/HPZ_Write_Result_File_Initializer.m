@@ -107,18 +107,20 @@ end
 % reminder: the criterions are:
 %   1. NLLS - Euclidean metric
 %   2. NLLS - CFGK metric
-%   3. MMI - Max aggregator
-%   4. MMI - Mean aggregator
-%   5. MMI - Average Sum of Squares aggregator
-%   6. BI
+%   3. NLLS - normalized-Euclidean metric
+%   4. MMI - Max aggregator
+%   5. MMI - Mean aggregator
+%   6. MMI - Average Sum of Squares aggregator
+%   7. BI
 
 full_str = criterion_value_str;
 full_str{1} = char(strcat({'NLLS '}, criterion_value_str{1}, {' Euclidean Metric'}));
 full_str{2} = char(strcat({'NLLS '}, criterion_value_str{2}, {' CFGK Metric'}));
-full_str{3} = char(strcat({'MMI '}, criterion_value_str{3}, {' Max(Wastes)'}));
-full_str{4} = char(strcat({'MMI '}, criterion_value_str{4}, {' Mean(Wastes)'}));
-full_str{5} = char(strcat({'MMI '}, criterion_value_str{5}, {' Avg(SumOfSquares(Wastes))'}));
-full_str{6} = char(strcat({'BI '}, criterion_value_str{6}));
+full_str{3} = char(strcat({'NLLS '}, criterion_value_str{3}, {' normalized-Euclidean Metric'}));
+full_str{4} = char(strcat({'MMI '}, criterion_value_str{4}, {' Max(Wastes)'}));
+full_str{5} = char(strcat({'MMI '}, criterion_value_str{5}, {' Mean(Wastes)'}));
+full_str{6} = char(strcat({'MMI '}, criterion_value_str{6}, {' Avg(SumOfSquares(Wastes))'}));
+full_str{7} = char(strcat({'BI '}, criterion_value_str{7}));
 
 for i=1:length(output_file_config)
     if (output_file_config(i) == 1)
