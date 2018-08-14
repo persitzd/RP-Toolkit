@@ -23,8 +23,15 @@ full_index = aggregation_method(per_observation_index);
 in_sample_residuals = per_observation_index;
 % calculation of residuals
 num_of_obs = length(per_observation_index);
-for t=1:num_of_obs
-    in_sample_residuals(t) = full_index - aggregation_method(per_observation_index([1:(t-1),(t+1):num_of_obs]));
+if num_of_obs == 1
+    % this occurs when we calculate out-of-sample, and the recursive calls
+    % somtimes lead to num_of_obs == 1
+    in_sample_residuals(1) = full_index;
+else
+    % calculate the in_sample residual
+    for t=1:num_of_obs
+        in_sample_residuals(t) = full_index - aggregation_method(per_observation_index([1:(t-1),(t+1):num_of_obs]));
+    end
 end
 
 end

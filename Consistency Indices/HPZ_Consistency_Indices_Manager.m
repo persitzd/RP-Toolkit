@@ -1,4 +1,4 @@
-function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, one_residuals_file, max_time_estimation, print_precision, waitbar_options, main_folder_for_results, current_run, total_runs) %#ok<INUSL>
+function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, one_residuals_file, max_time_estimation, print_precision, waitbar_options, main_folder_for_results, current_run, total_runs) %#ok<INUSL>
 
 % this function is the container for the whole inconsistency indices module - 
 % all inconsistency indices procedures (consistency check, printing results to
@@ -11,13 +11,13 @@ function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, GARP_flags
 
 
 % determining whether to use a single waitbar or a seperate waitbar per subject 
-if (waitbar_options == HPZ_Constants.waitbar_none)
+if (waitbar_options(1) == HPZ_Constants.waitbar_none)
     single_waitbar = false;
     active_waitbar = false;
-elseif (waitbar_options == HPZ_Constants.waitbar_per_subject)
+elseif (waitbar_options(1) == HPZ_Constants.waitbar_per_subject)
     single_waitbar = false;
     active_waitbar = true;
-elseif (waitbar_options == HPZ_Constants.waitbar_single)
+elseif (waitbar_options(1) == HPZ_Constants.waitbar_single)
     single_waitbar = true;
     active_waitbar = false;
 end
@@ -25,20 +25,21 @@ end
 
 
 % these are just for convenience
-consistency_basic_flags = [GARP_flags(1) AFRIAT_flags(1) VARIAN_flags(1) HOUTMAN_flags(1)];
-consistency_residuals_flags_temp = [GARP_flags(2) AFRIAT_flags(2) VARIAN_flags(2) HOUTMAN_flags(2)];
+consistency_basic_flags = [GARP_flags(1) , AFRIAT_flags(1) , VARIAN_flags(1) , HOUTMAN_flags(1) , MPI_flags(1)];
+consistency_residuals_flags_temp = [GARP_flags(2) , AFRIAT_flags(2) , VARIAN_flags(2) , HOUTMAN_flags(2) , MPI_flags(2)];
 consistency_residuals_flags = min(consistency_basic_flags, consistency_residuals_flags_temp);
-consistency_in_sample_flags = [GARP_flags(3) AFRIAT_flags(3) VARIAN_flags(3) HOUTMAN_flags(3)]; %#ok<NASGU>
-consistency_out_sample_flags = [GARP_flags(4) AFRIAT_flags(4) VARIAN_flags(4) HOUTMAN_flags(4)]; %#ok<NASGU>
+consistency_in_sample_flags = [GARP_flags(3) , AFRIAT_flags(3) , VARIAN_flags(3) , HOUTMAN_flags(3) , MPI_flags(3)]; %#ok<NASGU>
+consistency_out_sample_flags = [GARP_flags(4) , AFRIAT_flags(4) , VARIAN_flags(4) , HOUTMAN_flags(4) , MPI_flags(4)]; %#ok<NASGU>
 
 
 
 % 'stable' is essential to keep the original order of subjects as it is
 % in the file data
 subjects = unique(data_matrix(:,1), 'stable');  % array of subjects' IDs
-subjects_str = num2str(subjects);   %#ok<NASGU> % as strings
-% number of subjects
 num_subjects = length(subjects);
+% chosen subjects
+chosen_subjects = subjects(subjects_index);
+chosen_subjects_num = length(subjects_index);
 % an array of location indices - the i'th element 		
 % is the index of the first observation of the subject i 
 [rows,~] = size(data_matrix);
@@ -50,7 +51,8 @@ for i=1:rows
         counter_subjects = counter_subjects + 1;
     end
 end
-chosen_subjects_num = length(subjects_index);
+
+
 
 
 
@@ -78,7 +80,7 @@ cleanup_close_file = onCleanup(@() fclose(file_handle));
 % name and headers for residuals file
 if sum(consistency_residuals_flags) ~= 0
     % getting the list of column headers for the residual file/files
-    residuals_col_headers = HPZ_Consistency_Indices_Residuals_Headers (GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags);
+    residuals_col_headers = HPZ_Consistency_Indices_Residuals_Headers (GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags);
     % name of residuals file - we make sure that there isn't an existing file by the same name    
     while (true)
         consistency_residuals_str = char(strcat(HPZ_Constants.Consistency_action_file_name, {' - '}, 'Results Residuals - Date', {' '}, date, {' - '}, generate_random_str));
@@ -110,6 +112,10 @@ if (HOUTMAN_flags(1) == 1)
     fprintf(file_handle, '%s,%s,', ...
         'Houtman Maks Index', 'Is exact');
 end
+if (MPI_flags(1) == 1)
+    fprintf(file_handle, '%s,%s,', ...
+        'MPI Index Mean', 'MPI Index Median');
+end
 fprintf(file_handle, '\n');
 
 
@@ -121,10 +127,17 @@ if (single_waitbar)
     % disable the per-subject waitbar
     active_waitbar = false;
     % define the waitbar
-    waitbar_name = char(strcat(HPZ_Constants.waitbar_name_calculation, {' - '}, num2str(chosen_subjects_num), {' Subjects '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs), ')'));
+    basic_flags = [GARP_flags(1) , AFRIAT_flags(1) , VARIAN_flags(1) , HOUTMAN_flags(1) , MPI_flags(1)];
+    indices_strings = {' GARP' , ' Afriat', ' Varian', ' Houtman-Maks', ' Money-Pump'};
+    for i=1:length(basic_flags)
+        if basic_flags(i) == 0
+            indices_strings{i} = '';
+        end
+    end
+    waitbar_name = char(strcat(HPZ_Constants.waitbar_name_calculation, {' -'}, indices_strings{:}, {' '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs), ')'));
     waitbar_msg = char(strcat(HPZ_Constants.waitbar_calculation, 's', {' '}, HPZ_Constants.waitbar_indices));
     new_bar_val = 0;
-    h_wb = wide_waitbar(new_bar_val, waitbar_msg, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
+    h_wb = wide_waitbar(new_bar_val, {waitbar_msg, '', ''}, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
 end
 
 
@@ -133,6 +146,16 @@ end
 % calculates the indices for that subject, then prints the results for that
 % subject to the results file/s
 for i=1:chosen_subjects_num
+    
+    
+    % code for a single waitbar instead of multiple waitbars (part 2 out of 3) 
+    if (single_waitbar)
+        % update the waitbar
+        new_bar_val = (i-1) / chosen_subjects_num;
+        current_subject_str = char(strcat({'Calculating Subject '}, num2str(chosen_subjects(i))));
+        waitbar(new_bar_val, h_wb, {waitbar_msg, char(strcat({'Completed '}, num2str(i-1), {' Subjects out of '}, num2str(chosen_subjects_num))), current_subject_str});
+    end
+    
     
     % extracting the data that is necessary for all methods and calculations
     if subjects_index(i) < num_subjects
@@ -149,8 +172,8 @@ for i=1:chosen_subjects_num
 
     % the function can return the disaggregated matrices of violations, we
     % don't report it.
-    [~,~,~,~,~,~,~,~,~, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN, Var_exact, HM, HM_exact, Mat] = ...
-                            HPZ_Subject_Consistency (data, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, active_waitbar, current_run, total_runs);
+    [~,~,~,~,~,~,~,~,~, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN, Var_exact, HM, HM_exact, MPI, Mat] = ...
+                            HPZ_Subject_Consistency (data, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, active_waitbar, current_run, total_runs);
 
     % precision of numbers when printing
     precision_string = strcat('%10.', num2str(print_precision), 'g');
@@ -180,6 +203,11 @@ for i=1:chosen_subjects_num
         fprintf(file_handle, '%s,%s,', ...
             num2str(HM, precision_string), ...
             num2str(HM_exact, precision_string));
+    end
+    if (MPI_flags(1) == 1)
+        fprintf(file_handle, '%s,%s', ...
+            num2str(MPI(1), precision_string), ...
+            num2str(MPI(2), precision_string));
     end
     fprintf(file_handle, '\n');
 
@@ -222,12 +250,6 @@ for i=1:chosen_subjects_num
         
     end   % end of residuals printing
     
-    % code for a single waitbar instead of multiple waitbars (part 2 out of 3) 
-    if (single_waitbar)
-        % update the waitbar
-        new_bar_val = i / chosen_subjects_num;
-        waitbar(new_bar_val, h_wb);
-    end
 
 end   % end of loop over chosen subjects
 

@@ -1,4 +1,4 @@
-function col_headers = HPZ_Consistency_Indices_Residuals_Headers (GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags)
+function col_headers = HPZ_Consistency_Indices_Residuals_Headers (GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags)
 
 % this function returns a cell that contains all the column headers required 
 % for the residuals files for consistency and inconsistency indices
@@ -53,6 +53,16 @@ if (HOUTMAN_flags(1) == 1)
             % not implemented
         end
         if (HOUTMAN_flags(4) == 1)
+            num_of_columns = num_of_columns + 6;
+        end
+    end
+end
+if (MPI_flags(1) == 1)
+    if (MPI_flags(2) == 1)
+        if (MPI_flags(3) == 1)
+            % not implemented
+        end
+        if (MPI_flags(4) == 1)
             num_of_columns = num_of_columns + 6;
         end
     end
@@ -169,6 +179,22 @@ if (HOUTMAN_flags(1) == 1)
             col_headers{current_col+3} = 'HM residual index is-exact';
             col_headers{current_col+4} = 'HM difference full from residual';
             col_headers{current_col+5} = 'HM normalized difference full from residual';
+            current_col = current_col + 6;
+        end
+    end
+end
+if (MPI_flags(1) == 1)
+    if (MPI_flags(2) == 1)
+        if (MPI_flags(3) == 1)
+            % not implemented
+        end
+        if (MPI_flags(4) == 1)
+            col_headers{current_col} = 'MPI Mean full index';
+            col_headers{current_col+1} = 'MPI Median full index';
+            col_headers{current_col+2} = 'MPI Mean out-of-Sample index';
+            col_headers{current_col+3} = 'MPI Median out-of-Sample index';
+            col_headers{current_col+4} = 'MPI Mean difference full from out-of-Sample';
+            col_headers{current_col+5} = 'MPI Median difference full from out-of-Sample';
             current_col = current_col + 6; %#ok<NASGU>
         end
     end

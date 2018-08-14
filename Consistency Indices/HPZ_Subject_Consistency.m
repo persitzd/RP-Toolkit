@@ -1,4 +1,4 @@
-function [expenditure, DRP, SDRP, RP, SRP, WARP, GARP, SARP, FLAGS, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN, Var_exact, HM, HM_exact, Mat] = HPZ_Subject_Consistency (data_matrix, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, active_waitbar, current_run, total_runs)
+function [expenditure, DRP, SDRP, RP, SRP, WARP, GARP, SARP, FLAGS, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN, Var_exact, HM, HM_exact, MPI, Mat] = HPZ_Subject_Consistency (data_matrix, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, active_waitbar, current_run, total_runs)
 
 % this function calculates all the currently implemented consistency and
 % inconsistency indices, and their residuals (and depending on the flags 
@@ -36,6 +36,16 @@ function [expenditure, DRP, SDRP, RP, SRP, WARP, GARP, SARP, FLAGS, VIO_PAIRS, V
 
 
 
+% are we running on data where the choice of the DM is between only 2
+% goods, and not 3 or more (we need it because when it is only 2 goods, 
+% we can improve the speed in Houtman-Maks)
+% in the current version of the code it is always true cause we haven't yet
+% implemented a general framework for more than 2 goods, but it will be
+% relevant in the next version (version 3)
+is_2_goods = true;
+
+
+
 %% Subject_Consistency
 
 % Variables:
@@ -65,25 +75,36 @@ identical_choices_threshold = HPZ_Constants.identical_choices_threshold;
 % number of observations
 [obs_num , ~] = size(data_matrix);
 
+% these are for convenience
+basic_flags = [GARP_flags(1) , AFRIAT_flags(1) , VARIAN_flags(1) , HOUTMAN_flags(1) , MPI_flags(1)];
+residuals_flags_temp = [GARP_flags(2) , AFRIAT_flags(2) , VARIAN_flags(2) , HOUTMAN_flags(2) , MPI_flags(2)];
+residuals_flags = min(basic_flags , residuals_flags_temp);
+in_sample_flags = [GARP_flags(3) , AFRIAT_flags(3) , VARIAN_flags(3) , HOUTMAN_flags(3) , MPI_flags(3)];
+out_sample_flags = [GARP_flags(4) , AFRIAT_flags(4) , VARIAN_flags(4) , HOUTMAN_flags(4) , MPI_flags(4)];
+
+
+
 
 
 % define the waitbar
 if (active_waitbar)
+    indices_strings = {' GARP' , ' Afriat', ' Varian', ' Houtman-Maks', ' Money-Pump'};
+    for i=1:length(basic_flags)
+        if basic_flags(i) == 0
+            indices_strings{i} = '';
+        end
+    end
     waitbar_name = char(strcat(HPZ_Constants.waitbar_name_calculation, {' '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs), ')'));
     waitbar_msg = char(strcat(HPZ_Constants.waitbar_calculation, {' '}, num2str(data_matrix(1,1)), {' '}, HPZ_Constants.waitbar_indices));
     new_bar_val = 0;
-    h_wb = wide_waitbar(new_bar_val, waitbar_msg, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
+    h_wb = wide_waitbar(new_bar_val, {waitbar_msg, ''}, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
 end
 
 
 
-%% initialization of residuals result Matrix
 
-basic_flags = [GARP_flags(1) , AFRIAT_flags(1) , VARIAN_flags(1) , HOUTMAN_flags(1)];
-residuals_flags_temp = [GARP_flags(2) , AFRIAT_flags(2) , VARIAN_flags(2) , HOUTMAN_flags(2)];
-residuals_flags = min(basic_flags , residuals_flags_temp);
-in_sample_flags = [GARP_flags(3) , AFRIAT_flags(3) , VARIAN_flags(3) , HOUTMAN_flags(3)];
-out_sample_flags = [GARP_flags(4) , AFRIAT_flags(4) , VARIAN_flags(4) , HOUTMAN_flags(4)];
+
+%% initialization of residuals result Matrix
 
 if sum(residuals_flags) == 0
     % then no residuals are required
@@ -101,7 +122,7 @@ else
     % we check whether we need to calculate its residuals and whether to
     % calculate them in sample or out of sample or both
     % (the number of columns will be between 1 and 9)
-    for i=1:4
+    for i=1:5
         if (residuals_flags(i) == 1)
             if (in_sample_flags(i) == 1)
                 if (i == 3)
@@ -126,31 +147,34 @@ else
                 %   also, in VARIAN and HOUMAN-MAKS we also have to print
                 %   whether the original index and whether the residual
                 %   index were exact or approximated
-                if (i == 3)
-                    % there are 3 in sample measures for VARIAN -
+                if (i == 1)
+                    % in violations counting we have WARP, GARP and SARP
+                    num_of_columns = num_of_columns + 3*sum(GARP_flags(5:7));
+                elseif (i == 3)
+                    % there are 3  measures for VARIAN -
                     % one for MIN, one for MEAN and one for AVGSSQ
+                    % for each of these 3 we need: full index, out-of-sample
+                    % index, difference and normalized difference.
+                    % we also need to print is_exact both for the full data
+                    % and for the truncated data.
                     num_of_columns = num_of_columns + 3*4+2;
                 elseif (i == 4)
                     % in HOUTMAN-MAKS we have the full index and whether it
                     % is exact, the residual index and whether it is exact,
-                    % and difference and normalized difference
+                    % and difference and normalized difference.
                     num_of_columns = num_of_columns + 4+2;
-                elseif (i == 1)
-                    % in afriat we have WARP, GARP and SARP
-                    num_of_columns = num_of_columns + 3*sum(GARP_flags(5:7));
+                elseif (i == 5)
+                    % in MPI we have 2 aggregators: mean and median
+                    num_of_columns = num_of_columns + 3*2;
                 else
+                    % full index, out-of-sample index, difference
+                    % (this is default, but currently implied only for Afriat) 
                     num_of_columns = num_of_columns + 3;
                 end
-                
-%                 if (i == 3) || (i == 4)
-%                     % in VARIAN and in HOUTMAN-MAKS we also print is_exact
-%                     % both for the full index and for the partial index 
-%                     num_of_columns = num_of_columns + 2;
-%                 end
             end
         end
     end
-
+    
     % creating the results matrix for the residuals
     Mat = zeros (obs_num, num_of_columns);
     % entering the subject ID and the observations numbers
@@ -187,7 +211,7 @@ Choices(:,1:4) = data_matrix(1:obs_num,3:6);   % quantities & prices
 expenditure = (Choices(:,1)*Choices(:,3)' + Choices(:,2)*Choices(:,4)')';
 
 % record the dimensions of expenditure
-[rows,cols] = size(expenditure);
+[rows , cols] = size(expenditure); %#ok<ASGLU>
 
 % the purpose of the matrix identical_choice is to locate identical choices. Value of 
 % cell (j,k) is 1 if choices identical, and 0 otherwise. The following loop builds the 
@@ -245,23 +269,14 @@ SDRP = (REF - diag(expenditure)*ones(rows,1)'*index_threshold > 0) * 1;
 
 
 
-% % for debugging:
-% print_matrix_to_file ('expenditure-matrix', expenditure, '%10.20g', 0, 0);
-% print_matrix_to_file ('DRP-matrix', DRP, '%10.20g', 0, 0);
-% print_matrix_to_file ('SDRP-matrix', SDRP, '%10.20g', 0, 0);
-
-
-
 % statement needed for the graph theory external package to work
 % efficiently
-
 set_matlab_bgl_default(struct('full2sparse',1));
 
 % The matrix NS_RP has at the cell in the i'th row and the j'th
 % column Inf if and only if the bundle that was chosen in 
 % observation i is not revealed preferred to the bundle that was chosen 
 % in observation j. Otherwise it includes a positive integer.
-
 NS_RP = all_shortest_paths(DRP);
 
 % The matrix RP has at the cell in the i'th row and the j'th
@@ -269,24 +284,30 @@ NS_RP = all_shortest_paths(DRP);
 % observation i is revealed preferred to the bundle that was chosen 
 % in observation j. Otherwise, it equals 0. 
 
-RP = zeros(rows);
+% NEW CODE:
+RP = ~isinf(NS_RP);
 
-for j=1:rows
-    % going through all NS_RP’s cells.
-    for k=1:cols
-        % if there is the length of the path from j to k is 
-        % finite, meaning there is a path from j to k (or in 
-        % other words bundle j is revealed preferred to bundle
-        % k), then RP(j,k)=1, otherwise RP(j,k) stays 0. 
-        if ~isinf(NS_RP(j,k))   
-            RP(j,k) = 1;
-        end
-    end
-end
+% OLD CODE:
+% RP = zeros(rows);
+% 
+% for j=1:rows
+%     % going through all NS_RP’s cells.
+%     for k=1:cols
+%         % if the length of the path from j to k is 
+%         % finite, meaning there is a path from j to k (or in 
+%         % other words bundle j is revealed preferred to bundle
+%         % k), then RP(j,k)=1, otherwise RP(j,k) stays 0. 
+%         if ~isinf(NS_RP(j,k))   
+%             RP(j,k) = 1;
+%         end
+%     end
+% end
+
+
 
 % The matrix NS_SRP has at the cell in the i'th row and the j'th
 % column, zero if and only if the bundle that was chosen in 
-% observation i is not strictly reveal prefered to the bundle that was chosen 
+% observation i is not strictly revealed preferred to the bundle that was chosen 
 % in observation j. Otherwise it includes a positive integer.
 
 % notice that x^iPx^j iff there exist bundles x^s,x^t such that:
@@ -295,27 +316,38 @@ end
 % NS_SRP(i,j)=sum[t=1 to m] ( sum[s=1 to m] PR(i,s)*SDRP(s,t) )*RP(t,j)
 % NS_SRP(i,j)=\ 0 iff there exist bundles x^s,x^t such that:
 %(x^i R x^s) & (x^s p0 x^t) & (x^t R x^j). 
-
 NS_SRP = (RP*SDRP)*RP;
+% % An alternative, maybe better for our needs SRP (not implemented):
+% RP_no_self = RP;
+% for i=1:obs_num
+%     RP_no_self(i,i) = 0;
+% end
+% NS_SRP = (RP_no_self*SDRP)*RP_no_self;
 
-% Create SRP
 
-SRP = zeros(rows);
 
 % The matrix SRP has at the cell in the i'th row and the j'th
 % column, 1 if and only if the bundle that was chosen in 
 % observation i is strictly revealed preferred to the bundle that was chosen 
 % in observation j. 
 
-for j=1:rows
-    % going through all NS_SRP’s cells.
-    for k=1:cols
-        if ~(NS_SRP(j,k) == 0) 
-            % if x^j P x^k then sets SRP(j,k)=1 otherwise, it stays 0.
-            SRP(j,k) = 1;
-        end
-    end
-end
+% NEW CODE:
+SRP = (NS_SRP ~= 0);
+
+% OLD CODE:
+% SRP = zeros(rows);
+% 
+% for j=1:rows
+%     % going through all NS_SRP’s cells.
+%     for k=1:cols
+%         if ~(NS_SRP(j,k) == 0) 
+%             % if x^j P x^k then sets SRP(j,k)=1 otherwise, it stays 0.
+%             SRP(j,k) = 1;
+%         end
+%     end
+% end
+
+
 
 % To test for SARP we will use the definition of SARP1. For every pair of
 % choices x and y if xRy and yRx it must be that x=y. We will take RP and
@@ -353,13 +385,14 @@ if SARP_ERRORS == 0
   SARP_FLAG = 0;
 end 
 
+
+
 % To test for GARP we will do the following: for every pair of
 % choices x and y if xRy then not yP0x. We will take RP and the transpose of
 % SDRP and multiply element by element. Every 1 corresponds to 
 % xRy and yP0x. The final matrix is the zero matrix if and only if 
 % GARP is satisfied. 
-
-GARP = RP.*(SDRP');
+GARP = RP .* (SDRP');
 
 % A flag that keeps the GARP result. It is 0 if and only if the data
 % satisfies GARP.
@@ -368,7 +401,6 @@ GARP_FLAG = 1;
 % GARP_ERRORS sums the values of all matrix GARP's cells. Counting 
 % the number of violations (notice that a pair of bundles x^i,x^j might be counted 
 % as two violations; one for (i,j), and the other for (j,i)). 
-
 GARP_ERRORS = sum(sum(GARP));
 
 % GARP_VIO_PAIRS sums the values of all matrix
@@ -380,6 +412,8 @@ GARP_VIO_PAIRS = sum(sum(triu(GARP|(GARP'))));
 if GARP_ERRORS == 0
   GARP_FLAG = 0;
 end 
+
+
 
 % To test for WARP we will do the following: for every pair of
 % choices x and y if xR0y then not yR0x. We will take DRP and the transpose of
@@ -449,10 +483,68 @@ if (sum(residuals_flags .* out_sample_flags) > 0)
     % this matrix, and later assign them to the main matrix.
     Mat_GARP = zeros (obs_num, 6);
 
+    % THIS CODE (for out-of-sample of WARP/GARP/SARP) IS FASTER, but its advantage is negligible
+    % (e.g. running time of calculations is 1 seconds instead of 3 seconds,
+    %  but printing the residuals to the file takes 100 seconds).
+    % so we use the regular, more naive but simpler code ahead (recursive calls). 
+%     % calculation of out-of-sample residuals
+%     [subsets_of_observations, num_of_subsets] = HPZ_Indices_Problem_Distribute(RP, RP);
+%     for i=1:num_of_subsets
+%         
+%         current_subset = subsets_of_observations{i};
+%         
+%         if length(current_subset) == 1
+%             
+%             Mat_GARP(current_subset(1), 1) = WARP_full;     % WARP partial index
+%             Mat_GARP(current_subset(1), 3) = GARP_full;     % GARP partial index
+%             Mat_GARP(current_subset(1), 5) = SARP_full;     % SARP partial index
+%             Mat_GARP(current_subset(1), 2) = 0;             % WARP difference in %
+%             Mat_GARP(current_subset(1), 4) = 0;             % GARP difference in %
+%             Mat_GARP(current_subset(1), 6) = 0;             % SARP difference in %
+%             
+%         else
+%             
+%             subset_DRP = DRP(current_subset, current_subset);
+%             subset_SDRP = SDRP(current_subset, current_subset);
+%             subset_identical_choice = identical_choice(current_subset, current_subset);
+%             
+%             for j=1:length(current_subset)
+%                 
+%                 remaining_indices = [1:(j-1) , (j+1):length(current_subset)];
+%                 truncated_identical_choice = subset_identical_choice(remaining_indices, remaining_indices);
+%                 truncated_DRP = subset_DRP(remaining_indices, remaining_indices);
+%                 truncated_SDRP = subset_SDRP(remaining_indices, remaining_indices);
+%                 
+%                 % WARP
+%                 truncated_WARP = truncated_DRP.*(truncated_DRP') - truncated_identical_choice;
+%                 %truncated_WARP_ERRORS = sum(sum(truncated_WARP));
+%                 truncated_WARP_VIO_PAIRS = sum(sum(triu(truncated_WARP|(truncated_WARP'))));
+%                 % GARP
+%                 [truncated_GARP, truncated_RP] = GARP_based_on_DRP_and_SDRP(truncated_DRP, truncated_SDRP);
+%                 %truncated_GARP_ERRORS = sum(sum(truncated_GARP));
+%                 truncated_GARP_VIO_PAIRS = sum(sum(triu(truncated_GARP|(truncated_GARP'))));
+%                 % SARP
+%                 truncated_SARP = truncated_RP.*(truncated_RP') - truncated_identical_choice;
+%                 %truncated_SARP_ERRORS = sum(sum(truncated_SARP));
+%                 truncated_SARP_VIO_PAIRS = sum(sum(triu(truncated_SARP|(truncated_SARP'))));
+%                 
+%                 % assignment
+%                 Mat_GARP(current_subset(j), 1) = truncated_WARP_VIO_PAIRS;      % WARP partial index
+%                 Mat_GARP(current_subset(j), 3) = truncated_GARP_VIO_PAIRS;      % GARP partial index
+%                 Mat_GARP(current_subset(j), 5) = truncated_SARP_VIO_PAIRS;      % SARP partial index
+%                 Mat_GARP(current_subset(j), 2) = (WARP_full - truncated_WARP_VIO_PAIRS) / WARP_full;    % WARP difference in %
+%                 Mat_GARP(current_subset(j), 4) = (GARP_full - truncated_GARP_VIO_PAIRS) / GARP_full;    % GARP difference in %
+%                 Mat_GARP(current_subset(j), 6) = (SARP_full - truncated_SARP_VIO_PAIRS) / SARP_full;    % SARP difference in %
+%                 
+%             end
+%         end
+%         
+%     end
+
     % calculation of out-of-sample residuals
     for i=1:obs_num
         truncated_data = squeeze(truncated_datas(i,:,:));
-        [~,~,~,~,~,~,~,~,~,VIO_PAIRS_temp,VIOLATIONS_temp,~,~,~,~,~,~] = HPZ_Subject_Consistency (truncated_data, [1,0,0,0,0,0,0], [0,0,0,0], [0,0,0,0,0], [0,0,0,0], 0); %#ok<ASGLU>
+        [~,~,~,~,~,~,~,~,~,VIO_PAIRS_temp,VIOLATIONS_temp,~,~,~,~,~,~,~] = HPZ_Subject_Consistency (truncated_data, [1,0,0,0,0,0,0], [0,0,0,0], [0,0,0,0,0], [0,0,0,0], [0,0,0,0], 0); %#ok<ASGLU>
         WARP_partial = VIO_PAIRS_temp(1);
         GARP_partial = VIO_PAIRS_temp(2);
         SARP_partial = VIO_PAIRS_temp(3);   
@@ -471,7 +563,7 @@ end
 if (residuals_flags(1) == 1)
     
     % WARP
-    if (GARP_flags(5) == 1)
+    if (GARP_flags(5) == 1 && WARP_full ~= 0)
         % full value
         Mat(:, col_counter) = WARP_full;
         % update the column
@@ -486,7 +578,7 @@ if (residuals_flags(1) == 1)
                     if WARP_Pairs(i,j) == 1
                         % if there is a GARP violation involving observations
                         % i and j, increase the in-sample residual for i and j
-                        Mat(i, col_counter) = Mat(i, col_counter) + 1;  %#ok<*AGROW>
+                        Mat(i, col_counter) = Mat(i, col_counter) + 1;  
                         Mat(j, col_counter) = Mat(j, col_counter) + 1;
                     end
                 end
@@ -514,7 +606,7 @@ if (residuals_flags(1) == 1)
     end
         
     % GARP
-    if (GARP_flags(6) == 1)
+    if (GARP_flags(6) == 1 && GARP_full ~= 0)
         % full value
         Mat(:, col_counter) = GARP_full;
         % update the column
@@ -557,7 +649,7 @@ if (residuals_flags(1) == 1)
     end
         
     % SARP
-    if (GARP_flags(7) == 1)
+    if (GARP_flags(7) == 1 && SARP_full ~= 0)
         % full value
         Mat(:, col_counter) = SARP_full;
         % update the column
@@ -606,7 +698,7 @@ end
 % updating waitbar after finishing with GARP
 if (active_waitbar)
     new_bar_val = HPZ_Constants.waitbar_finish_GARP;
-    waitbar(new_bar_val, h_wb);
+    waitbar(new_bar_val, h_wb, {waitbar_msg, char(strcat({'Completed:'}, indices_strings{1}, {' , Remaining:'}, indices_strings{2:5}))}); %#ok<*NODEF>
 end
 
 
@@ -624,6 +716,8 @@ HM = 0;
 HM_exact = 1;
 
 Var_exact = 1;
+
+MPI = [0,0];
 
 % If the data doesn't satisfies GARP, then the program calculates the violation 
 % extent according to AFRIAT, Varian and Houtman-Maks indices (which of these
@@ -686,7 +780,7 @@ if GARP_FLAG == 1
     % updating waitbar after finishing with AFRIAT
     if (active_waitbar)
         new_bar_val = HPZ_Constants.waitbar_finish_AFRIAT;
-        waitbar(new_bar_val, h_wb);
+        waitbar(new_bar_val, h_wb, {waitbar_msg, char(strcat({'Completed:'}, indices_strings{1:2}, {' , Remaining:'}, indices_strings{3:5}))});
     end
     
     
@@ -695,7 +789,8 @@ if GARP_FLAG == 1
     if (VARIAN_flags(1) == 1)
         % if VARIAN was chosen
         % (otherwise we don't want to aimlessly waste time in unneeded calculations)
-        [VARIAN , Var_exact, VAR_in_sample_residuals] = HPZ_Varian_efficiency_index (expenditure, identical_choice, index_threshold);
+        %[VARIAN, Var_exact, VAR_in_sample_residuals, ~] = HPZ_Varian_efficiency_index (expenditure, identical_choice, index_threshold);
+        [VARIAN, Var_exact, VAR_in_sample_residuals, VAR_out_sample_residuals, ~] = HPZ_Varian_Manager (expenditure, identical_choice, index_threshold, SDRP, VARIAN_flags(2)&&VARIAN_flags(4));
         
         % VARIAN residuals
         if VARIAN_flags(2) == 1
@@ -716,93 +811,32 @@ if GARP_FLAG == 1
 
             % out of sample
             if VARIAN_flags(4) == 1
-                
-                % waitbar for out-of-sample residuals
-                if (active_waitbar)
-                    waitbar_msg = char(strcat(HPZ_Constants.waitbar_calculation, {' '}, num2str(data_matrix(1,1)), {' '}, HPZ_Constants.waitbar_residuals_VARIAN));
-                    new_bar_val = 0;
-                    h_wb_VAR = wide_waitbar(new_bar_val, waitbar_msg, waitbar_name, HPZ_Constants.waitbar_width_multiplier);
-                end
-                
-                % we notify the user about our method of printing estimated
-                % calculation time to the consol
-                fprintf('\nStarting Varian Index Out-of-Sample Calculation per observation.\nVarian Index estimated calculation time will be printed only if the estimated time is at least %i seconds.\n\n', HPZ_Constants.estimated_time_to_print);
 
-                % we calculate for each observation its residual
+                % we assign each observation its residuals (mean and meanssq) 
                 for i=1:obs_num
-                    if Mat_GARP(i, 3) == 0
-                        % perfectly consistent
-                        VARIAN_temp = [0,0,0];
-                        Var_exact_temp = 1;     % perfectly accurate
-                    else
-                        % not perfectly consistent
-                        % truncated expenditure
-                        truncated_data = squeeze(truncated_datas(i,:,:));
-                        truncated_Choices(:,1:2) = truncated_data(:,3:4);   % quantities
-                        truncated_Choices(:,3:4) = truncated_data(:,5:6);   % prices
-                        truncated_expenditure = (truncated_Choices(:,1)*truncated_Choices(:,3)' + truncated_Choices(:,2)*truncated_Choices(:,4)')';
-                        % truncated identical choice
-                        [truncated_rows , ~] = size(truncated_expenditure);
-                        truncated_identical_choice = zeros(truncated_rows);
-                        for j=1:truncated_rows
-                            % going through all identical_choice’s cells.
-                            for k=1:truncated_rows
-                                %if the choices j&k are identical, then set value of cell (j,k) = 1 , otherwise 0. 
-                                if truncated_Choices(j,1) == truncated_Choices(k,1) && truncated_Choices(j,2) == truncated_Choices(k,2)
-                                      truncated_identical_choice(j,k) = 1;
-                                end
-                            end
-                        end
-                        % now we can calculate the out of sample residuals
-                        if (Var_exact == 1)
-                            % if the calculation for the full set of observations was exact,
-                            % we try exact calculation first, as usual. 
-                            [VARIAN_temp , Var_exact_temp , ~] = HPZ_Varian_efficiency_index (truncated_expenditure, truncated_identical_choice, index_threshold);
-                        elseif (Var_exact == 2)
-                            % if the calculation for the full set of observations was not exact,
-                            % then we immediately go to the approximation. 
-                            [VARIAN_temp , Var_exact_temp , ~] = HPZ_Varian_efficiency_index_approx (truncated_expenditure, truncated_identical_choice, index_threshold);
-                        elseif (Var_exact == 3)
-                            % if the calculation for the full set of observations was not exact,
-                            % and was performed by the second type of non-exact calculation (type 3),  
-                            % then we immediately go to the 2nd approximation. 
-                            [VARIAN_temp , Var_exact_temp , ~] = HPZ_Varian_efficiency_index_approx_second (truncated_expenditure, truncated_identical_choice, index_threshold);
-                        end
-                    end
-                    
                     % normalized indices (relevant for MEAN and AVGSSQ):
-                    VARIAN_Min_norm = VARIAN_temp(1);
-                    VARIAN_Mean_norm = VARIAN_temp(2) * (rows-1)/rows;
-                    VARIAN_AVGSSQ_norm = sqrt(VARIAN_temp(3)^2 * (rows-1)/rows);
-                    
-                    Mat(i, col_counter) = VARIAN(1);                        % MIN full index
-                    Mat(i, col_counter + 1) = VARIAN(2);                    % MEAN full index
-                    Mat(i, col_counter + 2) = VARIAN(3);                    % AVGSSQ full index
-                    Mat(i, col_counter + 3) = Var_exact;                    % full indices exact or not
-                    Mat(i, col_counter + 4) = VARIAN_temp(1);               % MIN partial index
-                    Mat(i, col_counter + 5) = VARIAN_temp(2);               % MEAN partial index
-                    Mat(i, col_counter + 6) = VARIAN_temp(3);               % AVGSSQ partial index
-                    Mat(i, col_counter + 7) = Var_exact_temp;               % partial indices exact or not
-                    Mat(i, col_counter + 8) = VARIAN(1) - VARIAN_temp(1);       % MIN difference
-                    Mat(i, col_counter + 9) = VARIAN(1) - VARIAN_Min_norm;      % MIN normalized difference
-                    Mat(i, col_counter + 10) = VARIAN(2) - VARIAN_temp(2);      % MEAN difference
-                    Mat(i, col_counter + 11) = VARIAN(2) - VARIAN_Mean_norm;    % MEAN normalized difference
-                    Mat(i, col_counter + 12) = VARIAN(3) - VARIAN_temp(3);      % AVGSSQ difference
-                    Mat(i, col_counter + 13) = VARIAN(3) - VARIAN_AVGSSQ_norm;  % AVGSSQ normalized difference
-                    
-                    % updating the waitbar
-                    if (active_waitbar)
-                        new_bar_val = i / obs_num;
-                        waitbar(new_bar_val, h_wb_VAR);
-                    end
+                    VARIAN_Min_norm = VAR_out_sample_residuals(i,1);
+                    VARIAN_Mean_norm = VAR_out_sample_residuals(i,2) * (rows-1)/rows;
+                    VARIAN_AVGSSQ_norm = sqrt(VAR_out_sample_residuals(i,3)^2 * (rows-1)/rows);
+                    % assigning to the matrix
+                    Mat(i, col_counter) = VARIAN(1);                            % MIN full index
+                    Mat(i, col_counter + 1) = VARIAN(2);                        % MEAN full index
+                    Mat(i, col_counter + 2) = VARIAN(3);                        % AVGSSQ full index
+                    Mat(i, col_counter + 3) = Var_exact;                        % full indices exact or not
+                    Mat(i, col_counter + 4) = VAR_out_sample_residuals(i,1);    % MIN partial index
+                    Mat(i, col_counter + 5) = VAR_out_sample_residuals(i,2);    % MEAN partial index
+                    Mat(i, col_counter + 6) = VAR_out_sample_residuals(i,3);    % AVGSSQ partial index
+                    Mat(i, col_counter + 7) = VAR_out_sample_residuals(i,4);    % partial indices exact or not
+                    Mat(i, col_counter + 8) = VARIAN(1) - VAR_out_sample_residuals(i,1);    % MIN difference
+                    Mat(i, col_counter + 9) = VARIAN(1) - VARIAN_Min_norm;                  % MIN normalized difference
+                    Mat(i, col_counter + 10) = VARIAN(2) - VAR_out_sample_residuals(i,2);   % MEAN difference
+                    Mat(i, col_counter + 11) = VARIAN(2) - VARIAN_Mean_norm;                % MEAN normalized difference
+                    Mat(i, col_counter + 12) = VARIAN(3) - VAR_out_sample_residuals(i,3);   % AVGSSQ difference
+                    Mat(i, col_counter + 13) = VARIAN(3) - VARIAN_AVGSSQ_norm;              % AVGSSQ normalized difference
                 end 
                 % update the counter
                 col_counter = col_counter + 14;
                 
-                if (active_waitbar)
-                    % close the waitbar
-                    close(h_wb_VAR);
-                end
             end
 
         end
@@ -813,7 +847,7 @@ if GARP_FLAG == 1
     % updating waitbar after finishing with VARIAN
     if (active_waitbar)
         new_bar_val = HPZ_Constants.waitbar_finish_VARIAN;
-        waitbar(new_bar_val, h_wb);
+        waitbar(new_bar_val, h_wb, {waitbar_msg, char(strcat({'Completed:'}, indices_strings{1:3}, {' , Remaining:'}, indices_strings{4:5}))});
     end
     
     
@@ -822,57 +856,29 @@ if GARP_FLAG == 1
     if (HOUTMAN_flags(1) == 1)
         % if HOUTMAN-MAKS was chosen
         % (otherwise we don't want to aimlessly waste time in unneeded calculations)
-        [HM , HM_exact, HM_residuals] = HPZ_Houtman_Maks_efficiency_index (Choices, index_threshold, HOUTMAN_flags(2));
-
+        [HM, HM_residuals, ~, ~, HM_exact] = HPZ_Houtman_Maks_Manager (HOUTMAN_flags(2), DRP, SDRP, RP, SRP, is_2_goods);
+        
         %% HOUTMAN-MAKS residuals
         if HOUTMAN_flags(2) == 1
             
             % out of sample (the only option actually for residuals)
             if HOUTMAN_flags(4) == 1
-                % if exact calculation was performed, then we already have the
-                % residuals:
-                if (HM_exact == 1)
-                    for i=1:obs_num
-                        Mat(i, col_counter) = HM;                           % full index
-                        Mat(i, col_counter + 1) = HM_exact;                 % full index exact or not
-                        Mat(i, col_counter + 2) = HM_residuals(i);          % partial index
-                        Mat(i, col_counter + 3) = HM_exact;                 % partial index exact or not
-                        Mat(i, col_counter + 4) = HM - HM_residuals(i);     % difference
+                
+                for i=1:obs_num
+                    Mat(i, col_counter) = HM;                                       % full index
+                    Mat(i, col_counter + 1) = HM_exact;                             % full index exact or not
+                    Mat(i, col_counter + 2) = HM_residuals(i);                      % partial index
+                    Mat(i, col_counter + 3) = HM_exact;                             % partial index exact or not
+                    Mat(i, col_counter + 4) = HM - HM_residuals(i);                 % difference
+                    % (we added this check, because the whole point of the
+                    % normalized difference is that it is either positive
+                    % or zero, but due to calculation issues it sometimes
+                    % resulted stuff like "2.77555756156289E-17")
+                    normalized_difference = HM - HM_residuals(i)*(rows-1)/rows;
+                    if abs(normalized_difference) < 10^(-15)
+                        normalized_difference = 0;
                     end
-
-                % if exact calculation was not performed, then we need to 
-                % calculate each residuals separately
-                elseif (HM_exact == 0)
-
-                    % we calculate for each observation its residual
-                    for i=1:obs_num
-                        if Mat_GARP(i, 3) == 0
-                            % perfectly consistent
-                            HM_temp = 0;
-                            HM_exact_temp = 1;     % perfectly accurate
-                        else
-                            % not perfectly consistent
-                            % truncated expenditure
-                            truncated_data = squeeze(truncated_datas(i,:,:));
-                            truncated_Choices(:,1:2) = truncated_data(:,3:4);   % quantities
-                            truncated_Choices(:,3:4) = truncated_data(:,5:6);   % prices
-                            % now we can calculate the out of sample residuals 
-                            [HM_temp , HM_exact_temp] = HPZ_Houtman_Maks_efficiency_index_approx (truncated_Choices, index_threshold);
-                        end
-                        
-                        % normalized index
-                        HM_norm = HM_temp * (rows-1)/rows;
-                        
-                        Mat(i, col_counter) = HM;                   % full index
-                        Mat(i, col_counter + 1) = HM_exact;         % full index exact or not
-                        Mat(i, col_counter + 2) = HM_temp;          % partial index
-                        Mat(i, col_counter + 3) = HM_exact_temp;    % partial index exact or not
-                        Mat(i, col_counter + 4) = HM - HM_temp;     % difference
-                        Mat(i, col_counter + 5) = HM - HM_norm;     % normalized difference
-
-                    end
-                    % update the counter
-                    col_counter = col_counter + 6; %#ok<NASGU>
+                    Mat(i, col_counter + 5) = normalized_difference;                % normalized difference
                 end
 
             end
@@ -885,8 +891,72 @@ if GARP_FLAG == 1
     % updating waitbar after finishing with HOUTMAN-MAKS
     if (active_waitbar)
         new_bar_val = HPZ_Constants.waitbar_finish_HOUTMAN;
-        waitbar(new_bar_val, h_wb);
+        waitbar(new_bar_val, h_wb, {waitbar_msg, char(strcat({'Completed:'}, indices_strings{1:4}, {' , Remaining:'}, indices_strings{5}))});
     end
+    
+    
+    
+    %% MPI
+    % (NOT YET IMPLEMENTED - MPI will appear in the next version (version 3) 
+%     if (MPI_flags(1) == 1)
+%         % if MPI (Money Pump Index) was chosen
+%         % (otherwise we don't want to aimlessly waste time in unneeded calculations)
+%         MPI = HPZ_Money_Pump_Index(expenditure, DRP);
+%         
+%         % MPI residuals
+%         if MPI_flags(2) == 1
+%             
+%             % in sample (not implemented)
+%             % if MPI_flags(3) == 1
+%             % 
+%             %     % we calculate for each observation its residual
+%             %     for i=1:obs_num
+%             %         Mat(i, col_counter) = 0;   % here there should be a call to a function that calculates residuals... 
+%             %     end 
+%             %     % update the counter
+%             %     col_counter = col_counter + 1;
+%             % 
+%             % end
+%             
+%             % out of sample (currently the only option actually for residuals)
+%             if MPI_flags(4) == 1
+%                 
+%                 % we calculate for each observation its residual
+%                 for i=1:obs_num
+%                     
+%                     if Mat_GARP(i, 3) == 0
+%                         % perfectly consistent
+%                         MPI_partial = [0,0];
+%                     else
+%                         % not perfectly consistent
+%                         truncated_data = squeeze(truncated_datas(i,:,:));
+%                         truncated_Choices(:,1:2) = truncated_data(:,3:4);   % quantities
+%                         truncated_Choices(:,3:4) = truncated_data(:,5:6);   % prices
+%                         truncated_expenditure = (truncated_Choices(:,1)*truncated_Choices(:,3)' + truncated_Choices(:,2)*truncated_Choices(:,4)')';
+%                         [~ , ~ , truncated_DRP , ~] = GARP_based_on_expenditures(truncated_expenditure, [], index_threshold);
+%                         MPI_partial = HPZ_Money_Pump_Index(truncated_expenditure, truncated_DRP);
+%                     end
+%                     
+%                     Mat(i, col_counter) = MPI(1);                       % full index mean
+%                     Mat(i, col_counter + 1) = MPI(2);                   % full index median
+%                     Mat(i, col_counter + 2) = MPI_partial(1);           % partial index mean
+%                     Mat(i, col_counter + 3) = MPI_partial(2);           % partial index median
+%                     Mat(i, col_counter + 4) = MPI(1) - MPI_partial(1);  % difference mean
+%                     Mat(i, col_counter + 5) = MPI(2) - MPI_partial(2);  % difference median
+%                 end 
+%                 % update the counter
+%                 col_counter = col_counter + 6; %#ok<NASGU>
+% 
+%             end
+%             
+%         end
+%     end
+%     
+%     % updating waitbar after finishing with HOUTMAN-MAKS
+%     if (active_waitbar)
+%         new_bar_val = HPZ_Constants.waitbar_finish_MPI;
+%         waitbar(new_bar_val, h_wb, {waitbar_msg, char(strcat({'Completed:'}, indices_strings{1:5}))});
+%     end
 end
 
 
@@ -895,6 +965,8 @@ if (active_waitbar)
     % close the waitbar
     close(h_wb, h_wb);
 end
+
+
 
 end
 
