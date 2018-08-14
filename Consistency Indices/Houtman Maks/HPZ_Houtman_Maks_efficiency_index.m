@@ -103,7 +103,7 @@ end
 
 % subsets_matrix holds in each row one subset of the require size
 
-% vector_of_trials=[1,2,3,4,…,trials]
+% vector_of_trials=[1,2,3,4,â€¦,trials]
 vector_of_trials = 1:1:trials;
 
 % start measuring time, in order to estimate total time the process will take 
@@ -141,7 +141,7 @@ while (j >= number_trials) && (~HM_found_flag)
     end
     
     % every row in the subsets_matrix is an option for a subset of observations numbers with j members, 
-    % from the set of all observations numbers (for example: {1,2,3,4,…j} or {2,3,4,5,…,j+1}). 
+    % from the set of all observations numbers (for example: {1,2,3,4,â€¦j} or {2,3,4,5,â€¦,j+1}). 
     % The matrix includes all of the options for sets of observations numbers of size j.    
     % matrix size: (vector_of_trials choose j) x j. 
     % note: 1. Every subset is ordered in ascending order. 
@@ -217,7 +217,7 @@ while (j >= number_trials) && (~HM_found_flag)
         
         for l=1:j
 
-            % going through all new_NS_RP’s cells.
+            % going through all new_NS_RPâ€™s cells.
             
             for m=1:j
 
