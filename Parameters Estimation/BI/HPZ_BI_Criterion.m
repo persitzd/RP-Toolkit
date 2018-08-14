@@ -19,23 +19,37 @@ function [average_criterion, param] = HPZ_BI_Criterion(param, endowments, observ
 % pref_class, etc.) see: HPZ_Variables_Documentation in the "Others" sub-folder 
 
 
-
+% number of observations
 [obs_num,~] = size(observations);
 
-% if numeric_flag == true
-%     criterion = HPZ_MMI(param, endowment, observations, treatment, function_flag, pref_class);
-% else
-%     criterion = HPZ_MMI_Analytical(observations, param, function_flag, pref_class);
-% end
-[criterions, param] = HPZ_MMI_Criterion_Per_Observation(param, endowments, observations, treatment, function_flag, pref_class, numeric_flag);
 
-% an array where indexes of observations where the subject's choice was
-% optimal are set to 1, and the rest are set to 0
-indexes_of_optimal_choice = (criterions < HPZ_Constants.BI_threshold);
+if numeric_flag == HPZ_Constants.analytic || numeric_flag == HPZ_Constants.numeric
 
-% averaging, and inversing (cause we count those that are 0, and we want to
-% count those that are not 0)
-average_criterion = 1 - ((sum(indexes_of_optimal_choice(:))) / obs_num) ;
+    % in analytic and numeric approach, we first calculate the MMI
+    % criterions per observation, and only then inspect which of them is 0
+    % (with threshold) and which is not
+    
+    [criterions, param] = HPZ_MMI_Criterion_Per_Observation(param, endowments, observations, treatment, function_flag, pref_class, numeric_flag);
+
+    % an array where indices of observations where the subject's choice was
+    % optimal are set to 1, and the rest are set to 0
+    indices_of_optimal_choice = (criterions < HPZ_Constants.BI_threshold);
+
+    % averaging, and inversing (cause we count those that are 0, and we want to
+    % count those that are not 0)
+    average_criterion = 1 - ((sum(indices_of_optimal_choice(:))) / obs_num) ;
+    
+elseif numeric_flag == HPZ_Constants.semi_numeric
+    
+    % in semi-numeric approach, we don't calculate the MMI
+    % criterions per observation; we only check of each observation if 
+    % the MMI criterion is bigger than 1-HPZ_Constants.BI_threshold or not
+    
+    [criterions, param] = HPZ_BI_Semi_Numeric(param, observations, function_flag, pref_class);
+    
+    average_criterion = mean(criterions);
+    
+end
 
 end
 
