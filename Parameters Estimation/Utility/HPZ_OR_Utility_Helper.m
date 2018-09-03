@@ -43,4 +43,16 @@ minus_utility_base = (0 - HPZ_OR_Utility(x, param1, param2, function_flag));
 minus_utility = alpha_multiplier * minus_utility_base;
 
 
+
+% the function fmincon cannot handle inf values, therefore instead of inf
+% we assign a really big number
+if isinf(minus_utility)
+    if minus_utility < 0
+        minus_utility = - 2^1000;
+    else
+        minus_utility = 2^1000;
+    end
+end
+
+
 end

@@ -37,12 +37,25 @@ end
 % for CRRA we calculate the utility as normally defined
 
 % for computational reasons, for both CRRA and CARA we calculate
-% a log order-preserving-transforamtion of the utility
+% a log order-preserving-transformation of the utility
 minus_utility_base = 0 - HPZ_Risk_Log_Utility(prob_x, x, param1, param2, param3, function_flag);
 
 
 
 % the modified utility
 minus_utility = alpha_multiplier * minus_utility_base;
+
+
+
+% the function fmincon cannot handle inf values, therefore instead of inf
+% we assign a really big number
+if isinf(minus_utility)
+    if minus_utility < 0
+        minus_utility = - 2^1000;
+    else
+        minus_utility = 2^1000;
+    end
+end
+
 
 end
