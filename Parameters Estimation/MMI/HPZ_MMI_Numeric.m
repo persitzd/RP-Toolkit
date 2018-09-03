@@ -242,7 +242,7 @@ elseif pref_class == HPZ_Constants.OR_pref   % other regarding preferences
                 max_x1 = 1 / observations(i,3); % compute the intersection point (1/p1)
                 max_x2 = 1 / observations(i,4); % compute the intersection point (1/p2)
                 % compute minimal expenditure using the grid search
-                MMI_values(i,1) = HPZ_MMI_Grid_Search (prob_x, param(1), param(2), 0, function_flag, max_x1, max_x2, utility, treatment, pref_class);
+                MMI_values(i,1) = HPZ_MMI_Grid_Search (0, param(1), param(2), 0, function_flag, max_x1, max_x2, utility, treatment, pref_class);
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
