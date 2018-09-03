@@ -128,13 +128,17 @@ elseif function_flag == HPZ_Constants.CARA_func   % CARA
         
         % log_minus_utility = log( exp(-A*max(x) ) = -A*max(x)
         % we want the minus of the log of the minus utility:
-        log_utility = A*max(x);
+        %log_utility = A*max(x);
+        % the function max(x) is an order-preserving function of A*max(x) given A is constant 
+        log_utility = max(x);
         
     elseif gamma == 0
         
         % log_minus_utility = log( exp(-A*min(x) ) = -A*min(x)
         % we want the minus of the log of the minus utility:
-        log_utility = A*min(x);
+        %log_utility = A*min(x);
+        % the function min(x) is an order-preserving function of A*min(x) given A is constant 
+        log_utility = min(x);
         
     else
         A_threshold = eps * 2^22;   % 2^(-30)
