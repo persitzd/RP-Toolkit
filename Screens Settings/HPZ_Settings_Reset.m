@@ -79,7 +79,7 @@ fprintf(settings_file, '%s\n', '0');   % line (20)
 
 % output_file_config (NLLS-eaclidean , NLLS-CFGK , NLLS-normalized-eaclidean , MMI-Max , MMI-Mean , MMI-AVGSSQ, BI)
 % default is to print none of them, except for the one being estimated 
-fprintf(settings_file, '%s,%s,%s,%s,%s,%s\n', '0', '0', '0', '0', '0', '0', '0');   % line (21)
+fprintf(settings_file, '%s,%s,%s,%s,%s,%s,%s\n', '0', '0', '0', '0', '0', '0', '0');   % line (21)
 % write_all_flag (default is not to write all, but only the best one)
 fprintf(settings_file, '%s\n', '0');   % line (22)
 % bootstrap_flag (default is without bootstrap)
