@@ -14,22 +14,25 @@ end
 
 
 % initialize the data list to be empty
-data_list_str = {'Choi et al. (2007)','Halevy et al. (2016)'};
+data_list_str = {'Choi et al. (2007)', 'Halevy et al. (2016)' , ...
+                 'Kurtz-David et al. (2019)', 'Kurtz-David et al. (2019)'};
 data_list_path = {strcat(HPZ_Constants.data_files_dir, '/Data_CFGK_2007.csv'),...
-                  strcat(HPZ_Constants.data_files_dir, '/Data_HPZ_2016.csv')};
+                  strcat(HPZ_Constants.data_files_dir, '/Data_HPZ_2016.csv'),...
+                  strcat(HPZ_Constants.data_files_dir, '/RISK_FMRI_KLPW_2018.csv'),...
+                  strcat(HPZ_Constants.data_files_dir, '/RISK_FMRI_KLPW_2018.csv')};
 % data_list_str = {'Choi et al. (2007)','Kurtz et al. (2016)','Halevy et al. (2016)'};
 % data_list_path = {strcat(main_folder, '/', HPZ_Constants.data_files_dir, '/Data_CFGK_2007.csv'),...
 %                 strcat(main_folder, '/', HPZ_Constants.data_files_dir, '/Data_KLP_2016.csv'),...
 %                 strcat(main_folder, '/', HPZ_Constants.data_files_dir, '/Data_HPZ_2016.csv')};
-data_list_prefs = {'1','1'};
-data_list_subject = {'1','1'};
-data_list_obs = {'2','2'};
-data_list_quantity1 = {'3','3'};
-data_list_quantity2 = {'4','4'};
-data_list_maxquantity1 = {'5','5'};
-data_list_maxquantity2 = {'6','6'};
-data_set = {'1',''};
-fix_endowments = {'1',''};
+data_list_prefs = {'1', '1', '1', '1'};
+data_list_subject = {'1', '1', '3', '5'};
+data_list_obs = {'2', '2', '6', '7'};
+data_list_quantity1 = {'3', '3', '8', '8'};
+data_list_quantity2 = {'4', '4', '9', '9'};
+data_list_maxquantity1 = {'5', '5', '10', '10'};
+data_list_maxquantity2 = {'6', '6', '11', '11'};
+data_set = {'1', '', '', ''};
+fix_endowments = {'1', '', '', ''};
 
 % create the data settings table
 data_settings = table(data_list_str', data_list_path', data_list_prefs', data_list_subject', data_list_obs', data_list_quantity1', data_list_quantity2', data_list_maxquantity1', data_list_maxquantity2', data_set', fix_endowments');

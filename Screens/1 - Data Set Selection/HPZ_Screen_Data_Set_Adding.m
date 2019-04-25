@@ -86,7 +86,8 @@ full_width = pos(3);
 
 % list of text input strings (initialized to empty strings)
 input_strings_list = {'', '', '', '', '', ''};
-
+% initialization
+data_name_text_copy = data_name;
 
 
 
@@ -109,6 +110,7 @@ main_label = uicontrol('Parent',panel, ...
 
 
 %% Name of File Data
+% (must not contain ",")
 
 % current bottom coordinate
 current_bottom = current_bottom - move_down;
@@ -137,7 +139,8 @@ data_file_text = uicontrol('Parent',panel, ...
     'units','pix', ...
     'position',[figure_width/8 , current_bottom , figure_width*3/4 , current_height], ...
     'backgroundc',get(fh,'color'), ...
-    'fontsize',10); %#ok<NASGU>
+    'fontsize',10, ...
+    'callback',{@check_button_call});
 
 
 
@@ -428,6 +431,16 @@ function [] = check_button_call(varargin)
         
     end
     
+    
+    % check that file name doesn't contain ","
+    string_data = get(data_name_text, 'string');
+    if any(ismember(string_data, ','))
+        % the user entered something that contains ","
+        set(data_name_text,'string',data_name_text_copy);
+    else
+        % update the data name string
+        data_name_text_copy = string_data;
+    end
     
     
     locations = [str2num(get(subject_text, 'string')), ...
