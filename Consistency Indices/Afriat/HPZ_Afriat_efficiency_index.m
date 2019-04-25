@@ -35,7 +35,7 @@ for i=1:num_of_iterations
     REF = diag(af_exp)*ones(rows,1)' - af_exp;
 
     %Denote v the following m dimension vector: 
-    % v=(AFRIAT,AFRIAT,…,AFRIAT).
+    % v=(AFRIAT,AFRIAT,â€¦,AFRIAT).
 
     %The matrix DRP has at the cell in the i'th row and the j'th
     %column, 1 if and only if the bundle that was chosen in 
@@ -83,7 +83,7 @@ for i=1:num_of_iterations
     RP = zeros(rows);
 
     for j=1:rows
-        for k=1:cols               % going through all NS_RP’s cells.
+        for k=1:cols               % going through all NS_RPâ€™s cells.
             if ~isinf(NS_RP(j,k))
                 
                 %if the length of the path from j to k is finite, meaning there   
@@ -123,7 +123,7 @@ for i=1:num_of_iterations
     else
         
         %if the data doesn't satisfy GARP_v, then it narrows the range to 
-        %[AFRIAT_LOWER, AFRIAT] because if the data doesn’t satisfy GARP_v, 
+        %[AFRIAT_LOWER, AFRIAT] because if the data doesnâ€™t satisfy GARP_v, 
         %it won't satisfy GARP_u for every u>v
 
         AFRIAT_UPPER = AFRIAT;
