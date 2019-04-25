@@ -1,4 +1,4 @@
-function [output_file_config, output_file_config_save, write_all_flag, bootstrap_flag, file_val_str, ok] = HPZ_Screen_Output_File_Format(output_file_config, write_all_flag, bootstrap_flag, action_flag, aggregation_flag, metric_flag, runs_counter)
+function [output_file_config, write_all_flag, bootstrap_flag, file_val_str, ok] = HPZ_Screen_Output_File_Format(action_flag, aggregation_flag, metric_flag, main_folder, runs_counter)
 
 % this function promotes a user-interface screen to the user, allowing her
 % to make choices regarding the output file, and also whether to perform
@@ -12,6 +12,10 @@ function [output_file_config, output_file_config_save, write_all_flag, bootstrap
 % function when making changes to the screen.
 % it is also recommended to use numeric variables in the same manner when
 % adding new elements to the screen.
+
+
+% read the saved settings for this screen
+[output_file_config, write_all_flag, bootstrap_flag] = HPZ_Output_Format_Settings_Read(main_folder);
 
 
 
@@ -361,6 +365,11 @@ function [] = ok_button_call(varargin)
             bootstrap_flag = false;
     end        
 
+    
+    % write the current setting to the settings file to be saved for next time  
+    HPZ_Output_Format_Settings_Write(output_file_config_save, write_all_flag, bootstrap_flag, main_folder);
+    
+    
     % close the window
     close(S.fh);
 
