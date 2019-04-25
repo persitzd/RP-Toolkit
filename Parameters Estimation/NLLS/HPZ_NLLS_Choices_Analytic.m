@@ -1,4 +1,4 @@
-function [choice_matrix, param] = HPZ_NLLS_Choices_Analytic(param, observations, function_flag, pref_class)
+function [choice_matrix, param] = HPZ_NLLS_Choices_Analytic(param, observations, function_flag, pref_class, debugger_mode)
 
 % This function finds and returns the optimal choice (a bundle) of the DM,
 % given his/hers preferences, prices, and other things.
@@ -262,7 +262,7 @@ if pref_class == HPZ_Constants.risk_pref
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if (isnan(choice_matrix(i,1)) || isnan(choice_matrix(i,2)))
                     warning('At least one of the commodities in the optimal bundle is NaN when Rho is %.20g, Beta is %.20g, P is %.20g and i is %d.', rho, beta, p, i);
                 elseif (isinf(choice_matrix(i,1)) || isinf(choice_matrix(i,2)))
@@ -544,7 +544,7 @@ if pref_class == HPZ_Constants.risk_pref
             end   % end of conditions on beta
 
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if (isnan(choice_matrix(i,1)) || isnan(choice_matrix(i,2)))
                     warning('At least one of the commodities in the optimal bundle is NaN when A is %.20g, Beta is %.20g, P is %.20g and i is %d.', A, beta, p, i);
                 elseif (isinf(choice_matrix(i,1)) || isinf(choice_matrix(i,2)))
@@ -712,7 +712,7 @@ elseif pref_class == HPZ_Constants.OR_pref   % other regarding preferences
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if (isnan(choice_matrix(i,1)) || isnan(choice_matrix(i,2)))
                     warning('At least one of the commodities in the optimal bundle is NaN when Rho is %.20g, Alpha is %.20g, P is %.20g and i is %d.', rho, alpha, p, i);
                 elseif (isinf(choice_matrix(i,1)) || isinf(choice_matrix(i,2)))

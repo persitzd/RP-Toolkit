@@ -1,4 +1,4 @@
-function HPZ_Write_Result_File_Finalizer(file_handle, output_file_config, final_output, index, subject_index, bootstrap_flag, print_precision)
+function HPZ_Write_Result_File_Finalizer(file_handle, output_file_config, final_output, index, subject_index, obs_num, bootstrap_flag, print_precision)
 
 % This function prints one row (specified by "index") of the "final_output" 
 % it recieves as argument, to the results file.
@@ -44,11 +44,12 @@ precision_string = strcat(',%.', num2str(print_precision), 'g');
 
 % the first is a string, cause it is the subject's index, the others 
 % are the estimated values of the 2 parameters, which are always printed
-print_string = strcat('%s', precision_string, precision_string);
+print_string = strcat('%s,%s', precision_string, precision_string);
 
 % there are at least three strings - the first is the subject's index,
 % and the second and third are the estimated parameters
 fprintf(file_handle, print_string, subject_index, ...
+                                    num2str(obs_num), ...
                                     subject_final_output(1), ...
                                     subject_final_output(2));
 

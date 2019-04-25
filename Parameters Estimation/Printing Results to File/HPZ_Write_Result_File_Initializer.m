@@ -84,7 +84,7 @@ end
 
 % there are at least three strings - the first is the subject's index,
 % and the second and third are the estimated parameters
-fprintf(file_handle, '%s,%s,%s', 'Subject', param_1, param_2);
+fprintf(file_handle, '%s,%s,%s,%s', 'Subject', 'Num of Observations', param_1, param_2);
 
 % if bootstrap was asked for, we need to add 8 more columns
 if (bootstrap_flag == true)

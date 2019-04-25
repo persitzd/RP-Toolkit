@@ -1,4 +1,4 @@
-function [criterions, param] = HPZ_MMI_Criterion_Per_Observation (param, endowments, observations, treatment, function_flag, pref_class, numeric_flag)
+function [criterions, param] = HPZ_MMI_Criterion_Per_Observation (param, endowments, observations, treatment, function_flag, pref_class, numeric_flag, debugger_mode)
 
 % The function calculates the MMI criterion per subject. Given a
 % specific functional form and prices, we look for the lowest expenditure 
@@ -49,13 +49,13 @@ end
 
 if numeric_flag == HPZ_Constants.numeric
     % numeric approach
-    [criterions, param] = HPZ_MMI_Numeric(param, endowments, observations, treatment, function_flag, pref_class);
+    [criterions, param] = HPZ_MMI_Numeric(param, endowments, observations, treatment, function_flag, pref_class, debugger_mode);
 elseif numeric_flag == HPZ_Constants.analytic
     % analytic approach
-    [criterions, param] = HPZ_MMI_Analytic(param, observations, function_flag, pref_class);
+    [criterions, param] = HPZ_MMI_Analytic(param, observations, function_flag, pref_class, debugger_mode);
 elseif numeric_flag == HPZ_Constants.semi_numeric
     % semi-numeric approach
-    [criterions, param] = HPZ_MMI_Semi_Numeric(param, observations, function_flag, pref_class);
+    [criterions, param] = HPZ_MMI_Semi_Numeric(param, observations, function_flag, pref_class, debugger_mode);
 end
 
 

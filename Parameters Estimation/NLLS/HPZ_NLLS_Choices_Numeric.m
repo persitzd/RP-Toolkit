@@ -1,4 +1,4 @@
-function [choice_matrix, param] = HPZ_NLLS_Choices_Numeric (param, prices, endowments, treatment, function_flag, asymmetric_flag, pref_class)
+function [choice_matrix, param] = HPZ_NLLS_Choices_Numeric (param, prices, endowments, treatment, function_flag, asymmetric_flag, pref_class, debugger_mode)
 
 % This function finds and returns the optimal choice (a bundle) of the DM,
 % given his/hers preferences, prices, and other things.
@@ -329,21 +329,22 @@ elseif pref_class == HPZ_Constants.OR_pref   % other regarding preferences
             
         end   % end of loop
         
-        % warnings to consol for debugging purposes (only when debugger mode is activated) 
-        % (it is in a seperate loop, in order not to disturb the "parfor" parallel computing)  
-        for i=1:observations
-            if (HPZ_Constants.debugger_mode)
-                if (isnan(choice_matrix(i,1)) || isnan(choice_matrix(i,2)))
-                    warning('At least one of the commodities in the optimal bundle is NaN when Param(2) is %.20g, Param(1) is %.20g, p1 is %.20g, p2 is %.20g, x1 is %.20g, x2 is %.20g and i is %d.', param(2), param(1), prices(i,1), prices(i,2), observations(i,1), observations(i,2), i);
-                elseif (isinf(choice_matrix(i,1)) || isinf(choice_matrix(i,2)))
-                    warning('At least one of the commodities in the optimal bundle is +Inf or -Inf when Param(2) is %.20g, Param(1) is %.20g, p1 is %.20g, p2 is %.20g, x1 is %.20g, x2 is %.20g and i is %d.', param(2), param(1), prices(i,1), prices(i,2), observations(i,1), observations(i,2), i);
-                end
-            end
-        end
-        
-        
     end
     
+end
+
+
+
+% warnings to consol for debugging purposes (only when debugger mode is activated) 
+% (it is in a seperate loop, in order not to disturb the "parfor" parallel computing)  
+for i=1:observations
+    if debugger_mode
+        if (isnan(choice_matrix(i,1)) || isnan(choice_matrix(i,2)))
+            warning('At least one of the commodities in the optimal bundle is NaN when Param(2) is %.20g, Param(1) is %.20g, p1 is %.20g, p2 is %.20g, x1 is %.20g, x2 is %.20g and i is %d.', param(2), param(1), prices(i,1), prices(i,2), observations(i,1), observations(i,2), i);
+        elseif (isinf(choice_matrix(i,1)) || isinf(choice_matrix(i,2)))
+            warning('At least one of the commodities in the optimal bundle is +Inf or -Inf when Param(2) is %.20g, Param(1) is %.20g, p1 is %.20g, p2 is %.20g, x1 is %.20g, x2 is %.20g and i is %d.', param(2), param(1), prices(i,1), prices(i,2), observations(i,1), observations(i,2), i);
+        end
+    end
 end
 
 

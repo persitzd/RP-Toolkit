@@ -1,4 +1,4 @@
-function [param, main_criterion, final_output] = HPZ_Estimation (data, obs_num, action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, asymmetric_flag, aggregation_flag, pref_class, numeric_flag, write_all_flag, active_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points)
+function [param, main_criterion, final_output] = HPZ_Estimation (data, obs_num, action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, asymmetric_flag, aggregation_flag, pref_class, numeric_flag, write_all_flag, max_time_estimation, min_counter, max_starting_points_options, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs)
 
 % this function estimates the parameters of the utility function
 % according to the choices made by the subject.
@@ -45,6 +45,15 @@ expenditure = (subject_data(:,1)*subject_data(:,3)' + subject_data(:,2)*subject_
 % endowment in each observation
 endowments = diag(expenditure);
 
+% max starting points, depending on the estimation approach
+if numeric_flag == HPZ_Constants.analytic 
+    max_starting_points = max_starting_points_options(1);
+elseif numeric_flag == HPZ_Constants.numeric
+    max_starting_points = max_starting_points_options(2);
+elseif numeric_flag == HPZ_Constants.semi_numeric 
+    max_starting_points = max_starting_points_options(3);
+end
+
 
 
 % Choi et al. (2007) correction
@@ -58,7 +67,7 @@ end
 
 
 %% Initializing the structures that hold the estimation results
- 
+
 % (this matrix keeps track of all estimations of parameters)
 results = zeros(max_starting_points, 2);
 
@@ -124,11 +133,11 @@ end
 
 % calculating the function value for the initial point (0,0) or (0.5,0)  
 if (action_flag == HPZ_Constants.NLLS_action)   % NLLS
-    [criterion_base_point] = HPZ_NLLS_Criterion(base_point, endowments, observations, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag);
+    [criterion_base_point] = HPZ_NLLS_Criterion(base_point, endowments, observations, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag, debugger_mode);
 elseif (action_flag == HPZ_Constants.MMI_action)   % MMI
-    [criterion_base_point] = HPZ_MMI_Criterion(base_point, endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag);
+    [criterion_base_point] = HPZ_MMI_Criterion(base_point, endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag, debugger_mode);
 elseif (action_flag == HPZ_Constants.BI_action)   % BI
-    [criterion_base_point] = HPZ_BI_Criterion(base_point, endowments, observations, treatment, function_flag, pref_class, numeric_flag);
+    [criterion_base_point] = HPZ_BI_Criterion(base_point, endowments, observations, treatment, function_flag, pref_class, numeric_flag, BI_threshold, debugger_mode);
 end
 % entering the result to all the relevant variables and matrices
 optimal_parameter_matrix(1,1:2) = base_point;
@@ -148,7 +157,7 @@ fval_temp_min = criterion_base_point;
 if (pref_class == HPZ_Constants.risk_pref) && (function_flag == HPZ_Constants.CRRA_func) && (param1_restrictions(2) > 0) && (param2_restrictions(1) <= 0) && (param2_restrictions(2) >= 0)
 
     % finding the (beta, 0) parameter combination with the best criterion
-    [param_temp, criterion_temp] = HPZ_Check_Rho_Zero_Cases(obs_num, endowments, observations, treatment, function_flag, param1_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, action_flag, numeric_flag);
+    [param_temp, criterion_temp] = HPZ_Check_Rho_Zero_Cases(obs_num, endowments, observations, treatment, function_flag, param1_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, action_flag, numeric_flag, BI_threshold, debugger_mode);
 
     if  (criterion_temp < fval_temp_min)
         % if we got a better estimation, we enter the new result to all 
@@ -246,11 +255,11 @@ for j=1:max_starting_points
         
         % computations take place here
         if (action_flag == HPZ_Constants.NLLS_action)   % NLLS
-            [results(j,:), criterion(j)] = fminsearchbnd(@(param) HPZ_NLLS_Criterion(param, endowments, observations, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag), initial_points(j,:), min_values, max_values, options); 
+            [results(j,:), criterion(j)] = fminsearchbnd(@(param) HPZ_NLLS_Criterion(param, endowments, observations, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag, debugger_mode), initial_points(j,:), min_values, max_values, options); 
         elseif (action_flag == HPZ_Constants.MMI_action)   % MMI
-            [results(j,:), criterion(j)] = fminsearchbnd(@(param) HPZ_MMI_Criterion(param, endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag), initial_points(j,:), min_values, max_values, options); 
+            [results(j,:), criterion(j)] = fminsearchbnd(@(param) HPZ_MMI_Criterion(param, endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag, debugger_mode), initial_points(j,:), min_values, max_values, options); 
         elseif (action_flag == HPZ_Constants.BI_action)   % BI
-            [results(j,:),criterion(j)] = patternsearch(@(param) HPZ_BI_Criterion(param, endowments, subject_data, treatment, function_flag, pref_class, numeric_flag), initial_points(j,:), [], [], [], [], min_values, max_values, [], options);
+            [results(j,:),criterion(j)] = patternsearch(@(param) HPZ_BI_Criterion(param, endowments, subject_data, treatment, function_flag, pref_class, numeric_flag, BI_threshold, debugger_mode), initial_points(j,:), [], [], [], [], min_values, max_values, [], options);
         end
         
         % here we check if the resulting criterion is equal 
@@ -350,13 +359,13 @@ for i = 1 : max_index
     %optimal_parameter_matrix(i, 1:2) = [0.969678245288051 , -0.342898270799821];
 
     % NLLS Criterion (Euclidean metric, Choi et al. (2007) metric)
-    [final_output(i,3), final_output(i,4), final_output(i,5), param_NLLS] = HPZ_NLLS_Metrics (optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, fix_corners, asymmetric_flag, pref_class, numeric_flag);
+    [final_output(i,3), final_output(i,4), final_output(i,5), param_NLLS] = HPZ_NLLS_Metrics (optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, fix_corners, asymmetric_flag, pref_class, numeric_flag, debugger_mode);
     
     % MMI Criterion (Max Waste, Mean Waste, Sum of Squares Wastes)
-    [final_output(i,6), final_output(i,7), final_output(i,8), param_MMI] = HPZ_MMI_Aggregates(optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, pref_class, numeric_flag);
+    [final_output(i,6), final_output(i,7), final_output(i,8), param_MMI] = HPZ_MMI_Aggregates(optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, pref_class, numeric_flag, debugger_mode);
     
     % BI Criterion
-    [final_output(i,9), param_BI] = HPZ_BI_Criterion(optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, pref_class, numeric_flag);
+    [final_output(i,9), param_BI] = HPZ_BI_Criterion(optimal_parameter_matrix(i,1:2), endowments, observations, treatment, function_flag, pref_class, numeric_flag, BI_threshold, debugger_mode);
     
     % When we perform analytic estimation, we somtimes round number,
     % e.g. in Risk (DA) we round beta to -1 when it is close to 1, and in

@@ -1,4 +1,4 @@
-function [Criterion] = HPZ_MMI_Grid_Search (prob_x, first_param, second_param, third_param, function_flag, max_x1, max_x2, utility, treatment, pref_class)
+function [Criterion] = HPZ_MMI_Grid_Search (prob_x, first_param, second_param, third_param, function_flag, max_x1, max_x2, utility, treatment, pref_class, debugger_mode)
 
 % Lion in the desert
 
@@ -104,7 +104,7 @@ for i=1:num_of_iterations
 
     % the optimal bundle for these prices assuming these
     % functional form and estimated parameters
-    x = HPZ_NLLS_Choices_Numeric (param, temp_price, 1, treatment, function_flag, 1, pref_class);
+    x = HPZ_NLLS_Choices_Numeric (param, temp_price, 1, treatment, function_flag, 1, pref_class, debugger_mode);
 
     if pref_class == HPZ_Constants.risk_pref   % risk preferences
     

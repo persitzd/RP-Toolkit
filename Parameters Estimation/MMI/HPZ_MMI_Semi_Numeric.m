@@ -1,4 +1,4 @@
-function [criterions, param] = HPZ_MMI_Semi_Numeric(param, observations, function_flag, pref_class)
+function [criterions, param] = HPZ_MMI_Semi_Numeric(param, observations, function_flag, pref_class, debugger_mode)
 
 % Lion in the desert
 
@@ -130,7 +130,7 @@ for i=1:num_obs
         
         % the optimal bundle for these prices assuming these
         % functional form and estimated parameters
-        x = HPZ_NLLS_Choices_Analytic(param, temp_observations, function_flag, pref_class);
+        x = HPZ_NLLS_Choices_Analytic(param, temp_observations, function_flag, pref_class, debugger_mode);
         
         if pref_class == HPZ_Constants.risk_pref   % risk preferences
 

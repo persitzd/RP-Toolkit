@@ -20,7 +20,7 @@ num_of_columns = 5;
 
 % counting the number of headers
 if (in_sample_flag)
-    num_of_columns = num_of_columns + 1;
+    num_of_columns = num_of_columns + 2;
 end
 if (out_sample_flag)
     num_of_columns = num_of_columns + 4;
@@ -76,8 +76,9 @@ col_headers{5} = 'Observation';
 current_col = 6;
 % setting all the headers
 if (in_sample_flag)
-    col_headers{current_col} = 'In-Sample Residual';
-    current_col = current_col + 1;
+    col_headers{current_col} = 'In-Sample Component Residual';
+    col_headers{current_col+1} = 'In-Sample Difference Residual';
+    current_col = current_col + 2;
 end
 if (out_sample_flag)
     % E.g. "Alternative Beta" (the beta value that was estimated when

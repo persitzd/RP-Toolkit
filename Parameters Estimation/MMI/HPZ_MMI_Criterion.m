@@ -1,4 +1,4 @@
-function [criterion, param] = HPZ_MMI_Criterion (param, endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag)
+function [criterion, param] = HPZ_MMI_Criterion (param, endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag, debugger_mode)
 
 % The function calculates the MMI criterion per subject. Given a
 % specific functional form and prices, we look for the lowest expenditure 
@@ -17,7 +17,7 @@ function [criterion, param] = HPZ_MMI_Criterion (param, endowments, observations
 
 
 % calculating all aggrgators at once
-[max_criterion, average_criterion, sum_of_squares_criterion, param] = HPZ_MMI_Aggregates(param, endowments, observations, treatment, function_flag, pref_class, numeric_flag);
+[max_criterion, average_criterion, sum_of_squares_criterion, param] = HPZ_MMI_Aggregates(param, endowments, observations, treatment, function_flag, pref_class, numeric_flag, debugger_mode);
 
 % taking the desired aggregator
 if aggregation_flag == HPZ_Constants.MMI_Max

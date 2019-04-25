@@ -1,4 +1,4 @@
-function Mat = HPZ_Estimation_Residuals (action_flag, data_matrix, obs_num, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, in_sample_flag, out_sample_flag, param_1, param_2, main_criterion, pref_class, numeric_flag, active_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points)
+function Mat = HPZ_Estimation_Residuals (action_flag, data_matrix, obs_num, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, in_sample_flag, out_sample_flag, param_1, param_2, main_criterion, pref_class, numeric_flag, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs)
 
 % this function performs residual calculations for the estimation of a
 % single subject. it may calculate in-sample residuals, out-of-sample
@@ -36,13 +36,13 @@ end
 % determining how many columns are required in the result matrix
 number_of_columns = 5;
 if in_sample_flag == true
-    number_of_columns = number_of_columns + 1;
+    number_of_columns = number_of_columns + 2;
 end
 if out_sample_flag == true
     number_of_columns = number_of_columns + 4;
 end
 % creating the result matrix
-Mat = zeros (obs_num, number_of_columns);
+Mat = nan (obs_num, number_of_columns);
 
 % the given parameters
 param = [param_1 , param_2];
@@ -80,38 +80,79 @@ if (in_sample_flag)
     
     % NLLS
     if action_flag == HPZ_Constants.NLLS_action
+        
         % the optimal cohices for the subject given these parameters
         if numeric_flag == HPZ_Constants.numeric
-            predicted_choices = HPZ_NLLS_Choices_Numeric (param, Choices(:,3:4), endowments, treatment, function_flag, asymmetric_flag, pref_class);
+            [predicted_choices, ~] = HPZ_NLLS_Choices_Numeric (param, Choices(:,3:4), endowments, treatment, function_flag, asymmetric_flag, pref_class, debugger_mode);
         elseif numeric_flag == HPZ_Constants.analytic
-            predicted_choices = HPZ_NLLS_Choices_Analytic(param, Choices(:,1:4), function_flag, pref_class);
+            [predicted_choices, ~] = HPZ_NLLS_Choices_Analytic(param, Choices(:,1:4), function_flag, pref_class, debugger_mode);
         end
         % (there is no: "numeric_flag == HPZ_Constants.semi_numeric"
         % since semi-numeric is unique for MMI and BI)
         
         %observed_choices = Choices(:,1:2);
         
-        % calculating the NLLS in-sample residuals
-        Mat (:, current_col) = HPZ_NLLS_Criterion_Per_Observation(Choices, predicted_choices, metric_flag);
+        % calculating the NLLS in-sample component residuals
+        in_sample_component = HPZ_NLLS_Criterion_Per_Observation(Choices, predicted_choices, metric_flag);
+        Mat (:, current_col) = in_sample_component;
+        
+        % taking the desired metric   ( (x,y) = (observations, optimal_bundles) )
+        if metric_flag == HPZ_Constants.euclidean_metric
+            metric_function = @(x,y) sum(HPZ_NLLS_Criterion_Euclid(x,y));
+        elseif metric_flag == HPZ_Constants.CFGK_metric
+            metric_function = @(x,y) sum(HPZ_NLLS_Criterion_Ldr(x,y));
+        elseif metric_flag == HPZ_Constants.normalized_euclidean_metric
+            metric_function = @(x,y) mean(HPZ_NLLS_Criterion_Euclid_normalized(x,y));
+        end
+        
+        % calculate in-sample difference residuals
+        for i=1:obs_num
+            Mat (i, current_col+1) = main_criterion - metric_function(Choices([1:(i-1),(i+1):end], :) , predicted_choices([1:(i-1),(i+1):end], :));
+        end
+        
         
     % MMI
     elseif action_flag == HPZ_Constants.MMI_action
-        % calculating the MMI in-sample residuals
-        Mat (:, current_col) = HPZ_MMI_Criterion_Per_Observation (param, endowments, Choices, treatment, function_flag, pref_class, numeric_flag);
+        
+        % calculating the MMI in-sample component residuals
+        in_sample_component = HPZ_MMI_Criterion_Per_Observation (param, endowments, Choices, treatment, function_flag, pref_class, numeric_flag, debugger_mode);
+        Mat (:, current_col) = in_sample_component;
+        
+        % taking the desired aggregator
+        if aggregation_flag == HPZ_Constants.MMI_Max
+            aggregator = @max;
+        elseif aggregation_flag == HPZ_Constants.MMI_Mean
+            aggregator = @mean;
+        elseif aggregation_flag == HPZ_Constants.MMI_AVGSSQ
+            aggregator = @(x) sqrt(meansqr(x));
+        end
+        
+        % calculate in-sample difference residuals
+        for i=1:obs_num
+            Mat (i, current_col+1) = main_criterion - aggregator(in_sample_component([1:(i-1),(i+1):end]));
+        end
+        
         
     % BI
     elseif action_flag == HPZ_Constants.BI_action
-        % calculating the MMI in-sample residuals
-        MMI_residual_i = HPZ_MMI_Criterion_Per_Observation (param, endowments, Choices, treatment, function_flag, pref_class, numeric_flag);
+        
+        % calculating the MMI in-sample component residuals
+        MMI_residual_i = HPZ_MMI_Criterion_Per_Observation (param, endowments, Choices, treatment, function_flag, pref_class, numeric_flag, debugger_mode);
         % if MMI criterion < BI_threshold then we will get 0,
         % otherwise we will get 1
-        Mat (:, current_col) = ceil(MMI_residual_i - HPZ_Constants.BI_threshold);
+        in_sample_component = ceil(MMI_residual_i - BI_threshold);
+        Mat (:, current_col) = in_sample_component;
+        
+        % calculate in-sample difference residuals
+        for i=1:obs_num
+            Mat (i, current_col+1) = main_criterion - mean(in_sample_component([1:(i-1),(i+1):end]));
+        end
     end
     
 end
 
 % updating the index of the next (current) column
-current_col = current_col + 1;
+current_col = current_col + 2;
 
 
 
@@ -127,7 +168,9 @@ if (out_sample_flag)
         end
         
         % we first perform an estimation on the truncated data
-        [param_i , criterion_i , ~] = HPZ_Estimation(adjusted_data, (obs_num-1), action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, asymmetric_flag, aggregation_flag, pref_class, numeric_flag, false, false, current_run, total_runs, max_time_estimation, min_counter, max_starting_points);
+        [param_i , criterion_i , ~] = HPZ_Estimation(adjusted_data, (obs_num-1), action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, ...
+                                    fix_corners, metric_flag, asymmetric_flag, aggregation_flag, pref_class, numeric_flag, false, ...
+                                    max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, false, current_run, total_runs);
         
         % we save the resulting parameters and the resulting criterion 
         % to the result matrix 

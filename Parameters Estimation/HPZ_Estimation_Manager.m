@@ -1,4 +1,4 @@
-function HPZ_Estimation_Manager(data_matrix, subjects_index, action_flag, pref_class, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, min_counter, max_starting_points, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag, one_residuals_file, significance_level, print_precision, waitbar_options, main_folder_for_results, current_run, total_runs)
+function HPZ_Estimation_Manager(data_matrix, subjects_index, action_flag, pref_class, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag, print_precision, bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, one_residuals_file, debugger_mode, waitbar_settings, main_folder_for_results, current_run, total_runs)
 
 % this function is the container for the whole parameter estimation module - 
 % all parameter estimation procedures (estimation, printing results to
@@ -17,24 +17,6 @@ global warnings_smaller_than_0
 global current_subject
 
 
-
-% determining whether to use a single waitbar or a seperate waitbar per subject 
-if (waitbar_options(1) == HPZ_Constants.waitbar_none)
-    single_waitbar = false;
-    active_waitbar = false;
-    bootstrap_waitbar = false;
-    residuals_waitbar = false;
-elseif (waitbar_options(1) == HPZ_Constants.waitbar_per_subject)
-    single_waitbar = false;
-    active_waitbar = true;
-    bootstrap_waitbar = true;
-    residuals_waitbar = true;
-elseif (waitbar_options(1) == HPZ_Constants.waitbar_single)
-    single_waitbar = true;
-    active_waitbar = false;
-    bootstrap_waitbar = waitbar_options(2);
-    residuals_waitbar = waitbar_options(3);
-end
 
 % precision of numbers when printing
 precision_string = strcat('%10.', num2str(print_precision), 'g');
@@ -62,6 +44,24 @@ end
 
 
 
+% determining whether to use a single waitbar or a separate waitbar per subject 
+if chosen_subjects_num < waitbar_settings(1) 
+    single_waitbar = false;
+    active_waitbar = true;
+    % per subject waitbar for residuals and for bootstrap
+    residuals_waitbar = true;
+    bootstrap_waitbar = true;
+else
+    single_waitbar = true;
+    active_waitbar = false;
+    % per subject waitbar for residuals and for bootstrap
+    residuals_waitbar = waitbar_settings(3);
+    bootstrap_waitbar = waitbar_settings(4);
+end
+
+
+
+
 % initialize (or re-initialize) global variables for this estimation
 HPZ_Global_Variables(chosen_subjects_num);
 
@@ -70,12 +70,12 @@ HPZ_Global_Variables(chosen_subjects_num);
 if (bootstrap_flag)
     % analytic approach is computed faster than numeric, 
     % therefore we allow a bigger sample.
-    if (numeric_flag == HPZ_Constants.numeric)
-        number_of_samples = HPZ_Constants.bootstrap_sample_size_numeric;        % 100 samples if numeric  
-    elseif (numeric_flag == HPZ_Constants.analytic)
-        number_of_samples = HPZ_Constants.bootstrap_sample_size_analytic;       % 1000 samples if analytic 
+    if (numeric_flag == HPZ_Constants.analytic)
+        number_of_samples = bootstrap_sample_sizes(1);
+    elseif (numeric_flag == HPZ_Constants.numeric)
+        number_of_samples = bootstrap_sample_sizes(2);
     elseif (numeric_flag == HPZ_Constants.semi_numeric)
-        number_of_samples = HPZ_Constants.bootstrap_sample_size_semi_numeric;   % 500 samples if semi-numeric
+        number_of_samples = bootstrap_sample_sizes(3);
     end
 end
 
@@ -84,7 +84,7 @@ end
 
 
 %% prepare results file/s, including column headers
-[file_handle, file_name_str, file_residuals_path_str, file_warnings_path_str] = HPZ_Write_Result_File_Initializer(output_file_config, action_flag, pref_class, function_flag, file_val_str, bootstrap_flag, significance_level, main_folder_for_results); %#ok<ASGLU>
+[file_handle, file_name_str, file_residuals_path_str, file_warnings_path_str] = HPZ_Write_Result_File_Initializer(output_file_config, action_flag, pref_class, function_flag, file_val_str, bootstrap_flag, bootstrap_significance_level, main_folder_for_results); %#ok<ASGLU>
 
 % make sure the file closes when execution stops for any reason 
 cleanup_close_file = onCleanup(@() fclose(file_handle));
@@ -154,11 +154,11 @@ for i=1:chosen_subjects_num
     
     asymmetric_flag = 1;    % As is
     treatment = 1;          % As is
-
+    
     % Perform the estimation (NLLS/MMI/BI)
     [param, main_criterion, final_output] = HPZ_Estimation (data, obs_num, action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, ...
                                                 fix_corners, metric_flag, asymmetric_flag, aggregation_flag, pref_class, ...
-                                                numeric_flag, write_all_flag, active_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points);
+                                                numeric_flag, write_all_flag, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs);
 
     % number of optimal results to be shown
     [rows_out,~] = size(final_output);
@@ -171,8 +171,9 @@ for i=1:chosen_subjects_num
         % subject's observations, with repeat, and find the estimation 
         % for this new set of observations.
         [me_1, me_2, se_1, se_2, le_1, le_2, ue_1, ue_2] = HPZ_Bootstrap_SE_Helper(data, treatment, number_of_samples, action_flag, ...
-                                                                                function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, ...
-                                                                                aggregation_flag, asymmetric_flag, pref_class, numeric_flag, significance_level, rows_out, bootstrap_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points);
+                                                        function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, ...
+                                                        aggregation_flag, asymmetric_flag, pref_class, numeric_flag, bootstrap_significance_level, rows_out, ...
+                                                        max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, bootstrap_waitbar, current_run, total_runs);
 
         final_output_new = [final_output, me_1, me_2, se_1, se_2, le_1, le_2, ue_1, ue_2];
 
@@ -186,14 +187,15 @@ for i=1:chosen_subjects_num
 
         % writing the results to the results file
         HPZ_Write_Result_File_Finalizer(file_handle, output_file_config, final_output_new, ...
-                                        j, num2str(data(1,1)), bootstrap_flag, print_precision);
+                                        j, num2str(data(1,1)), obs_num, bootstrap_flag, print_precision);
 
     end
 
     if (residual_flag)
         % if the user desired and set so, print the residuals to a separate file
         Mat = HPZ_Estimation_Residuals (action_flag, data, obs_num, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, ...
-                                    aggregation_flag, asymmetric_flag, in_sample_flag, out_sample_flag, param(1), param(2), main_criterion, pref_class, numeric_flag, residuals_waitbar, current_run, total_runs, max_time_estimation, min_counter, max_starting_points);
+                                    aggregation_flag, asymmetric_flag, in_sample_flag, out_sample_flag, param(1), param(2), main_criterion, pref_class, numeric_flag, ...
+                                    max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, residuals_waitbar, current_run, total_runs);
 
         % make sure the Results directory exists, if not - create it
         dir_exists = exist(strcat(main_folder_for_results, '/', HPZ_Constants.results_files_dir) , 'dir');

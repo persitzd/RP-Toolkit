@@ -1,4 +1,4 @@
-function [criterions, param] = HPZ_MMI_Numeric(param, endowments, observations, treatment, function_flag, pref_class)
+function [criterions, param] = HPZ_MMI_Numeric(param, endowments, observations, treatment, function_flag, pref_class, debugger_mode)
 
 % The function calculates  and returns the MMI criterion per observation. 
 % Given a specific functional form and prices, we look for the lowest 
@@ -87,7 +87,7 @@ if pref_class == HPZ_Constants.risk_pref   % risk preferences
                     max_x1 = 1 / observations(i,3); % compute the intersection point (1/p1)
                     max_x2 = 1 / observations(i,4); % compute the intersection point (1/p2)
                     % compute minimal expenditure using the grid search
-                    MMI_values(i,1) = HPZ_MMI_Grid_Search (prob_x, param(1), param(2), 0, function_flag, max_x1, max_x2, utility, treatment, pref_class);
+                    MMI_values(i,1) = HPZ_MMI_Grid_Search (prob_x, param(1), param(2), 0, function_flag, max_x1, max_x2, utility, treatment, pref_class, debugger_mode);
                     
                 end
                 
@@ -122,13 +122,13 @@ if pref_class == HPZ_Constants.risk_pref   % risk preferences
                     max_x1 = 1 / observations(i,3); % compute the intersection point (1/p1)
                     max_x2 = 1 / observations(i,4); % compute the intersection point (1/p2)
                     % compute minimal expenditure using the grid search
-                    MMI_values(i,1) = HPZ_MMI_Grid_Search (prob_x, param(1), param(2), 0, function_flag, max_x1, max_x2, utility, treatment, pref_class);
+                    MMI_values(i,1) = HPZ_MMI_Grid_Search (prob_x, param(1), param(2), 0, function_flag, max_x1, max_x2, utility, treatment, pref_class, debugger_mode);
                 end
                 
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if isnan(MMI_values(i,1))
                     warning('Criterion is NaN when Rho is %.20g, Beta is %.20g, p1 is %.20g, p2 is %.20g, utility is %.20g, x1 is %.20g, x2 is %.20g and i is %d.', param(2), param(1), prices(i,1), prices(i,2), utility, observations(i,1), observations(i,2), i);
                 elseif isinf(MMI_values(i,1))
@@ -176,11 +176,11 @@ if pref_class == HPZ_Constants.risk_pref   % risk preferences
                 max_x1 = 1 / observations(i,3); % compute the intersection point (1/p1)
                 max_x2 = 1 / observations(i,4); % compute the intersection point (1/p2)
                 % compute minimal expenditure using the grid search
-                MMI_values(i,1) = HPZ_MMI_Grid_Search (prob_x, param(1), 0, param(2), function_flag, max_x1, max_x2, utility, treatment, pref_class);
+                MMI_values(i,1) = HPZ_MMI_Grid_Search (prob_x, param(1), 0, param(2), function_flag, max_x1, max_x2, utility, treatment, pref_class, debugger_mode);
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if isnan(MMI_values(i,1))
                     warning('Criterion is NaN when A is %.20g, Beta is %.20g, p1 is %.20g, p2 is %.20g, utility is %.20g, x1 is %.20g, x2 is %.20g and i is %d.', param(2), param(1), prices(i,1), prices(i,2), utility, observations(i,1), observations(i,2), i);
                 elseif isinf(MMI_values(i,1))
@@ -242,11 +242,11 @@ elseif pref_class == HPZ_Constants.OR_pref   % other regarding preferences
                 max_x1 = 1 / observations(i,3); % compute the intersection point (1/p1)
                 max_x2 = 1 / observations(i,4); % compute the intersection point (1/p2)
                 % compute minimal expenditure using the grid search
-                MMI_values(i,1) = HPZ_MMI_Grid_Search (0, param(1), param(2), 0, function_flag, max_x1, max_x2, utility, treatment, pref_class);
+                MMI_values(i,1) = HPZ_MMI_Grid_Search (0, param(1), param(2), 0, function_flag, max_x1, max_x2, utility, treatment, pref_class, debugger_mode);
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if isnan(MMI_values(i,1))
                     warning('Criterion is NaN when Rho is %.20g, Alpha is %.20g, p1 is %.20g, p2 is %.20g, utility is %.20g, x1 is %.20g, x2 is %.20g and i is %d.', param(2), param(1), prices(i,1), prices(i,2), utility, observations(i,1), observations(i,2), i);
                 elseif isinf(MMI_values(i,1))

@@ -1,4 +1,4 @@
-function [criterions, param] = HPZ_BI_Semi_Numeric(param, observations, function_flag, pref_class)
+function [criterions, param] = HPZ_BI_Semi_Numeric(param, observations, function_flag, pref_class, BI_threshold, debugger_mode)
 
 % For each observation, the function finds the optimal choice given the
 % given endowment, then checks if this optimal choice has a better utility
@@ -54,7 +54,7 @@ criterions = zeros(num_obs, 1);
 
 
  % the endowment we check
-Endowment = 1 - HPZ_Constants.BI_threshold;
+Endowment = 1 - BI_threshold;
 
 % change the prices (but leave their ratio unchanged) to control endowment
 % (we also change in respective the choices (the quantities), since

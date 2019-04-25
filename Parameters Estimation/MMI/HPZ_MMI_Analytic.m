@@ -1,4 +1,4 @@
-function [criterions, param] = HPZ_MMI_Analytic(param, observations, function_flag, pref_class)
+function [criterions, param] = HPZ_MMI_Analytic(param, observations, function_flag, pref_class, debugger_mode)
 
 % The function calculates  and returns the MMI criterion per observation. 
 % Given a specific functional form and prices, we look for the lowest 
@@ -250,7 +250,7 @@ if pref_class == HPZ_Constants.risk_pref
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if isnan(MMI_values(i,1))
                     warning('Criterion is NaN when Rho is %.20g, Beta is %.20g, 1+Beta is %.20g, P is %.20g, u is %.20g, u_0 is %.20g, max_x is %.20g, min_x is %.20g and i is %d.', rho, beta, 1+beta, p, u, u_0, max_x, min_x, i);
                 elseif isinf(MMI_values(i,1))
@@ -507,7 +507,7 @@ if pref_class == HPZ_Constants.risk_pref
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if isnan(MMI_values(i,1))
                     warning('Criterion is NaN when A is %.20g, Beta is %.20g, 1+Beta is %.20g, P is %.20g, u is %.20g, u_0 is %.20g, log_u is %.20g, max_x is %.20g, min_x is %.20g and i is %d.', A, beta, 1+beta, p, u, u_0, log_u, max_x, min_x, i);
                 elseif isinf(MMI_values(i,1))
@@ -648,7 +648,7 @@ elseif pref_class == HPZ_Constants.OR_pref
             end
             
             % warnings to consol for debugging purposes (only when debugger mode is activated) 
-            if (HPZ_Constants.debugger_mode)
+            if debugger_mode
                 if isnan(MMI_values(i,1))
                     warning('Criterion is NaN when Rho is %.20g, Alpha is %.20g, P is %.20g, u is %.20g, x_0 is %.20g, y_0 is %.20g and i is %d.', rho, alpha, p, u, x_0, y_0, i);
                 elseif isinf(MMI_values(i,1))

@@ -1,4 +1,4 @@
-function [metric_euclidean, metric_CFGK, metric_normalized_euclidean, param] = HPZ_NLLS_Metrics (param, endowments, observations, treatment, function_flag, fix_corners, asymmetric_flag, pref_class, numeric_flag)
+function [metric_euclidean, metric_CFGK, metric_normalized_euclidean, param] = HPZ_NLLS_Metrics (param, endowments, observations, treatment, function_flag, fix_corners, asymmetric_flag, pref_class, numeric_flag, debugger_mode)
 
 % The function calculates the NLLS criterion with both euclidean metric
 % and with the metric used in CFGK (2007)) for a given specification of a 
@@ -20,10 +20,10 @@ obs_num = length(observations(:,1));
 
 if numeric_flag == HPZ_Constants.numeric
     % numeric approach
-    [optimal_bundles, param] = HPZ_NLLS_Choices_Numeric(param, observations(:,3:4), endowments, treatment, function_flag, asymmetric_flag, pref_class);
+    [optimal_bundles, param] = HPZ_NLLS_Choices_Numeric(param, observations(:,3:4), endowments, treatment, function_flag, asymmetric_flag, pref_class, debugger_mode);
 elseif numeric_flag == HPZ_Constants.analytic || numeric_flag == HPZ_Constants.semi_numeric
     % analytic approach, and also semi-numeric approach of MMI
-    [optimal_bundles, param] = HPZ_NLLS_Choices_Analytic(param, observations, function_flag, pref_class);
+    [optimal_bundles, param] = HPZ_NLLS_Choices_Analytic(param, observations, function_flag, pref_class, debugger_mode);
 end
 
 

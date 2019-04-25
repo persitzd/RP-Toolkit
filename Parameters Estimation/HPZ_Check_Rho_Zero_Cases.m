@@ -1,4 +1,4 @@
-function [param, criterion] = HPZ_Check_Rho_Zero_Cases(obs_num, endowments, observations, treatment, function_flag, beta_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, action_flag, numeric_flag)
+function [param, criterion] = HPZ_Check_Rho_Zero_Cases(obs_num, endowments, observations, treatment, function_flag, beta_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, action_flag, numeric_flag, BI_threshold, debugger_mode)
 
 % we want to check the Criterion value for every pair of (beta,rho)
 % such that beta=p-1 and rho=0, when p is an intermediate of two of the
@@ -98,13 +98,13 @@ for k=1:(num_of_intermediate_prices_ratios)
     % calculating the function value for the point (p-1,0)
     if (action_flag == HPZ_Constants.NLLS_action)
         % NLLS
-        [criterion_temp] = HPZ_NLLS_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag);
+        [criterion_temp] = HPZ_NLLS_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag, debugger_mode);
     elseif (action_flag == HPZ_Constants.MMI_action)
          % MMI
-        [criterion_temp] = HPZ_MMI_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag);
+        [criterion_temp] = HPZ_MMI_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag, debugger_mode);
     elseif (action_flag == HPZ_Constants.BI_action)
         % BI
-        [criterion_temp] = HPZ_BI_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, pref_class, numeric_flag);
+        [criterion_temp] = HPZ_BI_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, pref_class, numeric_flag, BI_threshold, debugger_mode);
     end
 
     if (k == 1) || (criterion_temp < criterion)
