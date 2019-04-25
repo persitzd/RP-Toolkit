@@ -1,4 +1,4 @@
-function [data_matrix, data_pref_class, fix_endowments, ok] = HPZ_Screen_Data_Set_Selection(fix_endowments, main_folder, runs_counter)
+function [data_matrix, data_pref_class, ok] = HPZ_Screen_Data_Set_Selection(main_folder, runs_counter)
 
 % this function promotes a user-interface screen to the user, allowing her
 % to choose a data on which to perform consistency checks or parameters 
@@ -23,7 +23,7 @@ data_pref_class = 0;
 ok = 0;
 
 %% get the data settings
-[data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set] = HPZ_Data_Settings_Read(main_folder);
+[data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments] = HPZ_Data_Set_Selection_Settings_Read(main_folder);
 
 % We check if all these files actually exist (in the defined paths).
 % For example, it could be that the file's location was changed, or that
@@ -50,7 +50,14 @@ data_list_quantity1 = data_list_quantity1(helper_vector == helper_file_exists);
 data_list_quantity2 = data_list_quantity2(helper_vector == helper_file_exists);
 data_list_maxquantity1 = data_list_maxquantity1(helper_vector == helper_file_exists);
 data_list_maxquantity2 = data_list_maxquantity2(helper_vector == helper_file_exists);
-
+if helper_file_exists(data_set)
+    helper_vector = helper_vector(helper_vector == helper_file_exists);
+    data_set = find(helper_vector == data_set, 1);
+elseif sum(helper_file_exists) == 0
+    data_set = 0;
+else
+    data_set = 1;
+end
 
 
 % this little cell helps us to convert 0 and 1 to 'off' and 'on', respectively 
@@ -61,19 +68,25 @@ enable = {'off','on'};
 %% location and size parameters (use these to easily make changes to the screen)
 
 % the height of the list inside the screen
-list_height = min(max(56 , 14*(max(size(data_list_str))+1)), 210); 
+list_height = min(max(56 , 13.5*(max(size(data_list_str))+1)), 250); 
 
 % screen size
 figure_width = 450;
-figure_height = 260 + list_height;
+figure_height = 320 + list_height;
 
 % limit of height as percentage of computer screen height
 max_height_percent = HPZ_Constants.max_height_percent;
 
-% height of bottom space designated for OK and Cancel buttons
+% height of the label in the head and of the more options label
+label_height = 20;
+% distance of highest element from top
+top_dist = 15;
+
+% height of almost-bottom space designated for OK and Cancel buttons
 buttons_space_height = 50;
 % buttons height as percentage of the space they are in
 buttons_height = 0.6;
+buttons_height_more_options = 0.8;
 % the distant between a button to the edge of the screen,
 % and is also half the distance between buttons.
 % the size of the buttons is designed to fit this and the buttons_height 
@@ -81,6 +94,11 @@ buttons_height = 0.6;
 buttons_dists = 10;
 % number of buttons
 buttons_num = 2;
+
+% height of bottom space designated for buttons that lead to advanced options 
+advanced_options_space_height = 40;
+% total height of "more options" section
+more_options_total_height = 2*(top_dist/2) + advanced_options_space_height;
 
 % width of each element
 element_width = 320;
@@ -90,12 +108,6 @@ sub_element_width = 80;
 % relative location of elements:
 % how much distance between parts (different indexes) that are one below each other 
 move_down = 15;
-
-% distance of highest element from top
-top_dist = 15;
-
-% height of the label in the head
-label_height = 20;
 
 % each radio options will be with height 20
 radio_height = 20;
@@ -109,7 +121,7 @@ label_font_size = 12;
 % general font size
 font_size = 8;
 % general but bigger font size
-%big_font_size = 10;
+big_font_size = 10;
 
 
 
@@ -118,14 +130,20 @@ font_size = 8;
 %% create the figure, with a slider if needed
 % scroll bar width (if scroll is needed)
 scroll_width = 20;
-bottom_space_height = buttons_space_height;
+bottom_space_height = buttons_space_height + more_options_total_height;
 top_space_height = 0;
 panel_height = figure_height - bottom_space_height - top_space_height;
 figure_title = char(strcat('Dataset Selection (', HPZ_Constants.current_run_screen, {' '}, num2str(runs_counter), ')'));
-[S.fh , S.panel] = ui_scroll_screen(figure_width, figure_height, scroll_width, max_height_percent, top_space_height, bottom_space_height, figure_title);
+[fh , panel] = ui_scroll_screen(figure_width, figure_height, scroll_width, max_height_percent, top_space_height, bottom_space_height, figure_title);
+
+more_options_panel = uipanel('Parent',fh,...
+                'backgroundc',get(fh,'color'),...
+                'units','pix',...
+                'position',[0 , 0 , figure_width , more_options_total_height]);
+
 
 % width including scroll bar if there is one
-pos = get(S.fh,'position');
+pos = get(fh,'position');
 full_width = pos(3);
 
 
@@ -134,14 +152,14 @@ full_width = pos(3);
 
 %% Head Label
 % current bottom coordinate
-current_bottom = panel_height-top_dist - label_height;
-S.label_DA = uicontrol('Parent',S.panel, ...
+current_bottom = panel_height - top_dist - label_height;
+label_DA = uicontrol('Parent',panel, ...
     'style','text',...
     'units','pix',...
     'position',[0 , current_bottom , figure_width , label_height],...
-    'backgroundc',get(S.fh,'color'),...
+    'backgroundc',get(fh,'color'),...
     'fontsize',label_font_size,'fontweight','bold',...
-    'string','Dataset Selection');
+    'string','Dataset Selection'); %#ok<NASGU>
 
 
 
@@ -151,13 +169,13 @@ current_height = 70 + list_height;
 % current bottom coordinate
 current_bottom = current_bottom - move_down - current_height;
 % a panel to contain the list and the buttons
-S.dataset_panel = uipanel('Parent',S.panel,...
-                'backgroundc',get(S.fh,'color'),...
+dataset_panel = uipanel('Parent',panel,...
+                'backgroundc',get(fh,'color'),...
                 'units','pix',...
                 'position',[0 , current_bottom , figure_width+2 , current_height]);
 
 % List of Dataset Files to select from
-S.lb_DS = uicontrol('Parent',S.dataset_panel,...
+lb_DS = uicontrol('Parent',dataset_panel,...
     'value', data_set,...
     'style','listbox',...
     'enable','on',...
@@ -167,24 +185,24 @@ S.lb_DS = uicontrol('Parent',S.dataset_panel,...
     'string',data_list_str);
 
 % Button to Remove file from list Button
-S.remove_file = uicontrol('Parent',S.dataset_panel, ...
+remove_file = uicontrol('Parent',dataset_panel, ...
     'style','push',...
     'unit','pix',...
-    'position',[buttons_dists , (1-buttons_height)/2*buttons_space_height , (figure_width-(buttons_num+1)*buttons_dists)/2 , buttons_height*buttons_space_height],...
+    'position',[buttons_dists , (1-buttons_height)/2*buttons_space_height , (figure_width-(buttons_num+1)*buttons_dists)/buttons_num , buttons_height*buttons_space_height],...
     'backgroundc',[255,184,184]/255,...
     'fontsize',font_size,...
     'string','Remove File',...
-    'callback',{@remove_file_call,S});
+    'callback',{@remove_file_call});
 
 % button to Browse for a new file Button
-S.browse_file = uicontrol('Parent',S.dataset_panel, ...
+browse_file = uicontrol('Parent',dataset_panel, ...
     'style','push',...
     'unit','pix',...
-    'position',[(figure_width/2)+buttons_dists , (1-buttons_height)/2*buttons_space_height , (figure_width-(buttons_num+1)*buttons_dists)/2 , buttons_height*buttons_space_height],...
+    'position',[(figure_width/buttons_num)+buttons_dists , (1-buttons_height)/2*buttons_space_height , (figure_width-(buttons_num+1)*buttons_dists)/buttons_num , buttons_height*buttons_space_height],...
     'backgroundc',[184,255,184]/255,...
     'fontsize',font_size,...
     'string','Add File...',...
-    'callback',{@browse_file_call,S});
+    'callback',{@browse_file_call}); %#ok<NASGU>
 
 
 
@@ -195,21 +213,21 @@ S.browse_file = uicontrol('Parent',S.dataset_panel, ...
 current_height = 60;
 % current bottom coordinate
 current_bottom = current_bottom - move_down - current_height;
-S.bg_ff = uibuttongroup(S.panel,'units','pix',...
+bg_ff = uibuttongroup(panel,'units','pix',...
     'title', 'Fix Quantities so Endowments will be Exactly 1', ...
     'fontsize',font_size,...
     'pos',[(figure_width-element_width)/2 , current_bottom , element_width , current_height]);
 
-S.fix_endowments_rd(1) = uicontrol(S.bg_ff,...
-    'value',1-fix_endowments,...
+fix_endowments_rd(1) = uicontrol(bg_ff,...
+    'value', (fix_endowments == 0),...
     'enable','on',...
     'style','rad',...
     'unit','pix',...
     'position',[yes_no_offsets(1) , radio_bottom , sub_element_width , radio_height],...
     'fontsize',font_size,...
     'string',' No');
-S.fix_endowments_rd(2) = uicontrol(S.bg_ff,...
-    'value',fix_endowments,...
+fix_endowments_rd(2) = uicontrol(bg_ff,...
+    'value', (fix_endowments ~= 0),...
     'enable','on',...
     'style','rad',...
     'unit','pix',...
@@ -222,28 +240,39 @@ S.fix_endowments_rd(2) = uicontrol(S.bg_ff,...
 
 
 %% OK Button
-S.ok_button = uicontrol('Parent',S.fh, 'style','push',...
+ok_button = uicontrol('Parent',fh, 'style','push',...
     'enable',enable{(max(size(data_list_str))>0)+1},...
     'unit','pix',...
-    'position',[buttons_dists , (1-buttons_height)/2*buttons_space_height , (full_width-(buttons_num+1)*buttons_dists)/buttons_num , buttons_height*buttons_space_height],...
+    'position',[buttons_dists , (1-buttons_height)/2*buttons_space_height + more_options_total_height , (full_width-(buttons_num+1)*buttons_dists)/buttons_num , buttons_height*buttons_space_height],...
     'string','OK',...
-    'fontsize',font_size,...
-    'callback',{@ok_button_call,S});
+    'fontsize',big_font_size,...
+    'callback',{@ok_button_call});
 
 %% Cancel Button
-S.cancel_button = uicontrol('Parent',S.fh, 'style','push',...
+cancel_button = uicontrol('Parent',fh, 'style','push',...
     'enable','on',...
     'unit','pix',...
-    'position',[(full_width/2)+buttons_dists , (1-buttons_height)/2*buttons_space_height , (full_width-(buttons_num+1)*buttons_dists)/buttons_num , buttons_height*buttons_space_height],...
+    'position',[(full_width/2)+buttons_dists , (1-buttons_height)/2*buttons_space_height + more_options_total_height , (full_width-(buttons_num+1)*buttons_dists)/buttons_num , buttons_height*buttons_space_height],...
     'string','Cancel',...
+    'fontsize',big_font_size,...
+    'callback',{@cancel_button_call}); %#ok<NASGU>
+
+
+
+%% Button for entering Advanced Settings
+advanced_settings_button = uicontrol('Parent',more_options_panel, 'style','push',...
+    'enable','on',...
+    'unit','pix',...
+    'position',[buttons_dists , (1-buttons_height_more_options)/2*advanced_options_space_height + top_dist/2 , (full_width-2*buttons_dists) , buttons_height_more_options*advanced_options_space_height],...
+    'string','Advanced Settings',...
     'fontsize',font_size,...
-    'callback',{@cancel_button_call,S});
+    'callback',{@advanced_settings_button_call}); %#ok<NASGU>
 
 
 
 
 
-uiwait(S.fh)  % Prevent all other processes from starting until closed.
+uiwait(fh)  % Prevent all other processes from starting until closed.
 
 
 
@@ -254,20 +283,20 @@ function [] = remove_file_call(varargin)
     % Callback for pushbutton.
     
     % current list
-    %current_list = get(S.lb_DS,'string');
+    %current_list = get(lb_DS,'string');
     % current chosen index in list (will be deleted)
-    data_set = get(S.lb_DS,'value');
+    data_set = get(lb_DS,'value');
     % current size of list
     list_size = max(size(data_list_str));
     if list_size == 1
         % then the list will be empty after the delete - 
         % removing file and pressing ok should be disabled
-        set(S.remove_file,'enable', 'off');
-        set(S.ok_button,'enable', 'off');
+        set(remove_file,'enable', 'off');
+        set(ok_button,'enable', 'off');
     end
     if list_size == data_set
         % then the current value will be outside the bounds of the list
-        set(S.lb_DS,'value',data_set-1);
+        set(lb_DS,'value',data_set-1);
     end
     
     % creating the new list (without the deleted item),
@@ -286,7 +315,7 @@ function [] = remove_file_call(varargin)
     data_list_maxquantity2 = data_list_maxquantity2(helper_vector ~= helper_vector(data_set));
 
     % updating the list
-    set(S.lb_DS,'string', data_list_str);
+    set(lb_DS,'string', data_list_str);
 end
 
 
@@ -305,11 +334,11 @@ function [] = browse_file_call(varargin)
         if (ok == 1)
             % then the list will not be empty after the addition - 
             % removing file and pressing ok should be disabled
-            set(S.remove_file,'enable', 'on');
-            set(S.ok_button,'enable', 'on');
+            set(remove_file,'enable', 'on');
+            set(ok_button,'enable', 'on');
 
             % current list
-            %current_list = get(S.lb_DS,'string');
+            %current_list = get(lb_DS,'string');
             % current size of list
             list_size = max(size(data_list_str));
             % if the list is empty, we will get 1 while we want to get 0 
@@ -332,10 +361,10 @@ function [] = browse_file_call(varargin)
             data_list_maxquantity2{list_size+1} = locations(6);
             
             % updating the list
-            set(S.lb_DS,'string', data_list_str);
+            set(lb_DS,'string', data_list_str);
             
             % automatically have the new data file be the selected one
-            set(S.lb_DS,'value',list_size+1);
+            set(lb_DS,'value',list_size+1);
         end
     end
 end
@@ -349,17 +378,17 @@ function [] = ok_button_call(varargin)
     % Callback for OK pushbutton.
 
     % Setting the dataset selection
-    data_set = get(S.lb_DS, 'value');
+    data_set = get(lb_DS, 'value');
 
     % Setting whether to fix endwoments
-    switch findobj(get(S.bg_ff,'selectedobject'))
-        case S.fix_endowments_rd(1)
+    switch findobj(get(bg_ff,'selectedobject'))
+        case fix_endowments_rd(1)
             % No
-            fix_endowments = false;
+            fix_endowments = 0;
 
-        case S.fix_endowments_rd(2)
+        case fix_endowments_rd(2)
             % Yes
-            fix_endowments = true;
+            fix_endowments = 1;
     end
 
     
@@ -380,7 +409,10 @@ function [] = ok_button_call(varargin)
     else
         % check if endowments are (approximately) equal to 1, otherwise print a warning 
         % the endowments (may not equal to 1)
-        endowments = data_matrix(:,3) .* data_matrix(:,5) + data_matrix(:,4) .* data_matrix(:,6);
+        %endowments = data_matrix(:,3) .* data_matrix(:,5) + data_matrix(:,4) .* data_matrix(:,6);
+        [~, num_of_columns] = size(data_matrix);
+        num_of_goods = (num_of_columns - 2) / 2;
+        endowments = sum( data_matrix(:, (2+1):(2+num_of_goods)) .* data_matrix(:, (2+num_of_goods+1):(2+num_of_goods+num_of_goods)) , 2 );
         % number of endowment significantly different from 1
         num_of_errors = sum ( (endowments > 1+HPZ_Constants.fix_endowments_error) | (endowments < 1/(1+HPZ_Constants.fix_endowments_error)) );
         if (num_of_errors)
@@ -390,7 +422,7 @@ function [] = ok_button_call(varargin)
         % fixing the bundles so their endowments will be equal exactly to 1.
         % this fix is needed because of rounding that makes the endowment a little
         % different from 1, which may damage the estimations to some extent
-        if (fix_endowments == true)
+        if fix_endowments
             % if the user chose to fix all bundles so their endwoments will be exactly 1, 
             % if the difference (in percentage) between 1 and the endowment is more
             % than this threshold, a warning will be given
@@ -400,9 +432,9 @@ function [] = ok_button_call(varargin)
         data_pref_class = data_list_prefs{data_set};
         ok = 1;
         
-        HPZ_Data_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, main_folder);
+        HPZ_Data_Set_Selection_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments, main_folder);
         % close the window
-        close(S.fh);
+        close(fh);
     end
 
 end
@@ -416,7 +448,17 @@ function [] = cancel_button_call(varargin)
     ok = 0;
 
     % close the window
-    close(S.fh);
+    close(fh);
+
+end
+
+
+
+
+%% Program for Advanced Settings button
+function [] = advanced_settings_button_call(varargin)
+
+    HPZ_Screen_Advanced_Options(main_folder);
 
 end
 
