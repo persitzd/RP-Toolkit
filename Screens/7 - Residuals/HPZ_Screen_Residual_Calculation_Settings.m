@@ -1,4 +1,4 @@
-function [residual_flag, in_sample_flag, out_sample_flag, ok] = HPZ_Screen_Residual_Calculation_Settings(residual_flag, in_sample_flag, out_sample_flag, runs_counter)
+function [residual_flag, in_sample_flag, out_sample_flag, ok] = HPZ_Screen_Residual_Calculation_Settings(main_folder, runs_counter)
 
 % this function promotes a user-interface screen to the user, allowing her
 % to choose whether to calculate residuals, and if so - whether to
@@ -13,6 +13,9 @@ function [residual_flag, in_sample_flag, out_sample_flag, ok] = HPZ_Screen_Resid
 % it is also recommended to use numeric variables in the same manner when
 % adding new elements to the screen.
 
+
+% read the saved settings for this screen
+[residual_flag, in_sample_flag, out_sample_flag] = HPZ_Residuals_Settings_Read(main_folder);
 
 
 % this little cell helps us to convert 0 and 1 to 'off' and 'on', respectively 
@@ -234,6 +237,11 @@ function [] = ok_button_call(varargin)
         out_sample_flag = true;
     end
 
+    
+    % write the current setting to the settings file to be saved for next time  
+    HPZ_Residuals_Settings_Write(residual_flag, in_sample_flag, out_sample_flag, main_folder);
+    
+    
     % close the window
     close(S.fh);
 end
