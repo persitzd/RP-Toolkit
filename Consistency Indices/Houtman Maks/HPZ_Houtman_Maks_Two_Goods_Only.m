@@ -1,4 +1,4 @@
-function [HM, HM_raw, HM_raw_pseudo_residuals] = HPZ_Houtman_Maks_Graph_Approach (GARP_couples, approach_type)
+function [HM, HM_raw, HM_raw_pseudo_residuals] = HPZ_Houtman_Maks_Two_Goods_Only (GARP_couples, approach_type)
 
 % this function is, in fact, an implementation of an algorithm of minimum vertex cover 
 % to see that, you may rename the variables as follows:
@@ -167,7 +167,7 @@ for i=1:num_of_subsets
                 % solving the remaining observations
                 % (NOTE! it is curcial to use "~approach_type" in order
                 % for this to work and not start an infinite loop)
-                [~, remaining_HM_raw, remaining_HM_raw_residuals] = HPZ_Houtman_Maks_Graph_Approach (remaining_GARP_couples, ~approach_type);
+                [~, remaining_HM_raw, remaining_HM_raw_residuals] = HPZ_Houtman_Maks_Two_Goods_Only (remaining_GARP_couples, ~approach_type);
             else
                 remaining_HM_raw = 0;
                 remaining_HM_raw_residuals = [];
@@ -200,7 +200,7 @@ for i=1:num_of_subsets
             GARP_couples_1(max_degree_obs, :) = 0;
             GARP_couples_1(:, max_degree_obs) = 0;
             % run again on the new matrix
-            [~, HM_raw_1, HM_raw_residuals_1] = HPZ_Houtman_Maks_Graph_Approach (GARP_couples_1, ~approach_type);
+            [~, HM_raw_1, HM_raw_residuals_1] = HPZ_Houtman_Maks_Two_Goods_Only (GARP_couples_1, ~approach_type);
             % we also drop all this observations
             HM_raw_1 = HM_raw_1 + 1;
             
@@ -209,7 +209,7 @@ for i=1:num_of_subsets
             GARP_couples_2([linked_obs, max_degree_obs], :) = 0;
             GARP_couples_2(:, [linked_obs, max_degree_obs]) = 0;
             % run again on the new matrix
-            [~, HM_raw_2, HM_raw_residuals_2] = HPZ_Houtman_Maks_Graph_Approach (GARP_couples_2, ~approach_type);
+            [~, HM_raw_2, HM_raw_residuals_2] = HPZ_Houtman_Maks_Two_Goods_Only (GARP_couples_2, ~approach_type);
             % we also drop all the linked observations
             HM_raw_2 = HM_raw_2 + length(linked_obs);
             
