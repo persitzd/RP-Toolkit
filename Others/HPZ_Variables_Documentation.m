@@ -148,6 +148,8 @@ function HPZ_Variables_Documentation
 % to the same (or almost same, by some threshold) criterion, we conclude
 % that this is probably the best possible criterion and end conclude the
 % estimation for that subject
+%% possible_num_convergence_points
+% possible values for min_counter that are shown to the user to choose from 
 
 %% max_starting_points
 % the maximum amount of attempts to estimate the parameters. each such
@@ -157,9 +159,8 @@ function HPZ_Variables_Documentation
 % the process may and actually it usually stops before all these points are
 % used, because the time limitaion and the convergence points limitation
 % are usually more tight.
-% by default this variable is 100 for analytic approach and 20 for numeric
-% approach.
-
+% by default this variable is 100 for analytic and semi-numeric approaches,
+% and 30 for numeric approach.
 
 
 %% output_file_config
@@ -219,10 +220,40 @@ function HPZ_Variables_Documentation
 % whether to perform bootstrap (true) or not (false), depending on the
 % user's decision
 
+%% bootstrap_sample_sizes
+% vector of length 3
+% size of sample for bootstrap : sizes of sample for bootstrap 
+% for analytic estimation (default is 1000),
+% for numeirc estimation (default is 100) and 
+% and for semi-numeric estimation (default is 500)
 %% number_of_samples
-% sample size when performing bootstrap. currently (11.2017) it is set to
-% 1000 for analytic approach and 100 for numeric approach
+% the current size of sample to be used
 
+%% bootstrap_significance_level
+% the confidence interval is of confidence level (1 - 2*bootstrap_significance_level) 
+% it has a probability of bootstrap_significance_level from each side
+
+
+%% BI_threshold
+% if we calculate MMI criterion for an observation, and it is less than
+% this threshold, then we say that BI=0, otherwise BI=1.
+% we have a threshold (and with a positive, non-zero value) due to
+% computational limits.
+
+
+%% debugger_mode
+% if set to "true", detailed warnings will be printed during parameter
+% estimation, if there are issues there. default is "false".
+
+
+%% waitbar_settings
+% a 3-length vector
+% the first element is how many subjects should there be so we will prefer
+% showing a single waitbar for all subjects, instead of a separate waitbar 
+% per subject.
+% the second element is whether to show a waitbar for residuals (in
+% parameter estimation) per subject.
+% the third element is whether to show a waitbar for bootstrap per subject.
 
 
 %% runs_counter
@@ -269,6 +300,12 @@ function HPZ_Variables_Documentation
 %   2. calculate residuals for it (1) or not (0)
 %   3. calculate in sample residuals (1) or not (0)
 %   4. calculate out of sample residuals (1) or not (0)
+
+%% Varian_algorithm_settings
+% a 2-length vector, that determines from what level of difficulty Varian
+% goes to approximation instead of exact calculation, and what extent of
+% approximation. It is used solely in HPZ_Varian_index_based_on_Houtman_Maks, 
+% hence for more details go there.
 
 %% HOUTMAN_flags 
 % is the user choices regarding HOUTMAN-MAX index,

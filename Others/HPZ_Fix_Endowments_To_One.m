@@ -29,13 +29,20 @@ function [adjusted_data] = HPZ_Fix_Endowments_To_One(data_matrix, start_index)
 % initializing the adjusted data
 adjusted_data = data_matrix;
 
+% calculate number of goods
+[~, num_of_columns] = size(data_matrix);
+num_of_goods = (num_of_columns - 2) / 2;
+
 % the endowments (may not equal to 1)
-endowments = data_matrix(:,start_index+2) .* data_matrix(:,start_index+4) + data_matrix(:,start_index+3) .* data_matrix(:,start_index+5);
+%endowments = data_matrix(:,start_index+2) .* data_matrix(:,start_index+4) + data_matrix(:,start_index+3) .* data_matrix(:,start_index+5);
+endowments = sum( data_matrix(:, (start_index+1+1):(start_index+1+num_of_goods)) .* data_matrix(:, (start_index+num_of_goods+1+1):(start_index+num_of_goods+1+num_of_goods)) , 2 );
+endowments_times_goods = repmat(endowments, 1, num_of_goods);
 
 % dividing both x1 and x2 by the endowment, thus creating a new bundle that
 % has an endowment exactly equal to 1
-adjusted_data(:,start_index+2) = data_matrix(:,start_index+2) ./ endowments(:);
-adjusted_data(:,start_index+3) = data_matrix(:,start_index+3) ./ endowments(:);
+%adjusted_data(:,start_index+2) = data_matrix(:,start_index+2) ./ endowments(:);
+%adjusted_data(:,start_index+3) = data_matrix(:,start_index+3) ./ endowments(:);
+adjusted_data(:, (start_index+1+1):(start_index+1+num_of_goods)) = data_matrix(:, (start_index+1+1):(start_index+1+num_of_goods)) ./ endowments_times_goods;
 
 end
 

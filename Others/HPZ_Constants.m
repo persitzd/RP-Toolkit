@@ -5,18 +5,13 @@ classdef HPZ_Constants
 % there are 2 sections of constants in this file:
 %   Part 1 -
 %       constants that affect the calculations, the estimations, and/or the 
-%       printing style of the results, e.g: thresholds, significance level, etc. 
+%       printing style of the results, e.g: thresholds, print_precision, etc. 
 %   Part 2 -
 %       constants that does not affect the results in any way. these include 
 %       arbitrary constants, as well as strings and numeric values that
 %       are used in the user interface (including waitbars and warnings). 
 
 properties (Constant)
-    
-    % This variable defines whether we are in "debugger mode", which means
-    % that we want very detailed warnings to be printed to the consol, or not. 
-    % It is "false" by default, change it to "true" to activate the debugger mode. 
-    debugger_mode = false;
     
     
     %% Part 1
@@ -42,12 +37,6 @@ properties (Constant)
     %     and choose the smallest multiplier that printed a number that was
     %     different from 1.
     print_threshold = 64*eps;
-    
-    % an arbitrary threshold value for the BI method
-    % if the criterion of the MMI is smaller than this threshold, then
-    % the BI criterion (= the waste) will be considered 0, otherwise it
-    % will be 1
-    BI_threshold = 10^(-5);
     
     % * a threshold value for the calculation of inconsistency indices,
     %   used when comparing expenditures to determine DRP (directly revealed
@@ -83,12 +72,6 @@ properties (Constant)
     % [-threshold , 1+threshold]
     MMI_threshold = 10^(-5);
     
-    % significance level (significance_level)   (a number in (0.000,0.500)) 
-    % (for a one sided test/confidence interval; e.g., if this variable equals 0.05,
-    %  than the actual significance level will be 0.10 for a two-sided
-    %  confidence interval resulting from the bootstrap)
-    significance_level = 0.05;
-    
     % number of significant digits to be printed (print_precision)
     % the precision of numeric results that are printed to results files 
     % (except for residual results) - number of significant digits.
@@ -118,28 +101,11 @@ properties (Constant)
     %  a warning will be displayed)
     fix_endowments_error = 0.05;
     
-    % max_starting_points : Default max number of initial points to check
-    % through the optimization algorithm - for numeirc estimation and for analytic estimation. 
-    % The Algorithm may stop before going through all the initial points, 
-    % if it reaches the required number of convergence point or reaches the time limit.
-    % Note that all initial points are being determined before the
-    % estimation begins (in a 2 x max_starting_points matrice), therefore 
-    % these numbers must not be inf and not extermely high (e.g. 10^6).
-    max_starting_points_numeric = 30;
-    max_starting_points_semi_numeric = 100;
-    max_starting_points_analytic = 100;
-    
-    % possible values for min_counter 
-    % (possible values presented for the user to choose from)
-    % defines number of convergence points that if reached then the
-    % estimation for this subject is considered finished.
-    min_counter_values = {'3','4','5','6','7','8','9','10','12','14','16','18','20','25','30'};
-    
-    % size of sample for bootstrap : default sizes of sample for bootstrap
-    % for numeirc estimation and for analytic estimation
-    bootstrap_sample_size_numeric = 100;
-    bootstrap_sample_size_semi_numeric = 500;
-    bootstrap_sample_size_analytic = 1000;
+    % when calculating VARIAN or HOUTMAN-MAKS indices, we estimate how much
+    % time it will take to finish, and print a message regarding that to
+    % the Consol. But if the estimated time is less than the following
+    % value (in seconds), we don't bother to print it
+    estimated_time_to_print = 1; % this is now redundant; we keep it for debugging 
     
     
     
@@ -215,6 +181,7 @@ properties (Constant)
     MMI_AVGSSQ = 3;
 
     % preferences classes (pref_class)
+    no_pref = 0;
     risk_pref = 1;
     OR_pref = 2;
 
@@ -248,18 +215,6 @@ properties (Constant)
     
     
     
-    % waitbar_options
-    % whether to show a separate waitbar for each subject (1), show a 
-    % single waitbar for all subjects in each run (2) not to show a 
-    % waitbar at all (0), or a smart waitbar (3) that shows a single 
-    % waitbar when running on many subjects (>=10), and a separate 
-    % per subject for a smaller number of subjects
-    waitbar_none = 0;
-    waitbar_per_subject = 1;
-    waitbar_single = 2;
-    waitbar_smart = 3;
-    waitbar_smart_num_of_subjects = 10;
-    
     % max user-interface screen size, in percentage of the computer screen size 
     max_height_percent = 0.8;
     
@@ -287,20 +242,15 @@ properties (Constant)
     waitbar_calculation = 'Calculating Subject';                           % 1st part for when any calculation is running
     waitbar_recovery = 'Recovering Subject';                               % 1st part for when any estimation is running
     waitbar_indices = 'Consistency Indices. Please wait...';               % 2nd part for when normal indices calculation is running
+    waitbar_residuals_AFRIAT = 'AFRIAT residuals. Please wait...';         % 2nd part for when residuals AFRIAT indices calculation is running
     waitbar_residuals_VARIAN = 'VARIAN residuals. Please wait...';         % 2nd part for when residuals VARIAN indices calculation is running
-    waitbar_residuals_HOUTMAN = 'HOUTMAN-MAKS residuals. Please wait...';   % 2nd part for when residuals HOUTMAN-MAKS indices calculation is running
+    waitbar_residuals_HOUTMAN = 'HOUTMAN-MAKS residuals. Please wait...';  % 2nd part for when residuals HOUTMAN-MAKS indices calculation is running
     waitbar_preferences = 'Preferences. Please wait...';                   % 2nd part for when normal parameter estimation is running
     waitbar_residuals = 'Residuals. Please wait...';                       % 2nd part for when residual estimation is running
     waitbar_bootstrap = 'Bootstrap. Please wait...';                       % 2nd part for when bootstrap estimation is running
     
     % width of waitbar (how much times wider than default)
     waitbar_width_multiplier = 2;
-    
-    % when calculating VARIAN or HOUTMAN-MAKS indices, we estimate how much
-    % time it will take to finish, and print a message regarding that to
-    % the Consol. But if the estimated time is less than the following
-    % value (in seconds), we don't bother to print it
-    estimated_time_to_print = 1;
     
     
     
@@ -324,14 +274,22 @@ properties (Constant)
     % sub-directory for results files (without the '/' in the beginning)
     results_files_dir = 'Results';
     
-    % sub-directory for settings files (without the '/' in the beginning)
-    settings_files_dir = 'Settings Files';
-    
     % sub-directory of data files
     data_files_dir = 'Data Files';
     
-    settings_file_name = 'User_Interface_Settings';   %.csv
-    data_settings_file_name = 'User_Data_Settings';   %.csv
+    % sub-directory for settings files (without the '/' in the beginning)
+    settings_files_dir = 'Settings Files';
+    
+    % names of settings files
+    data_settings_file_name = 'Data_Settings';   %.csv
+    action_settings_file_name = 'Action_Settings';   %.csv
+    consistency_indices_settings_file_name = 'Consistency_Indices_Settings';   %.csv
+    functional_form_risk_settings_file_name = 'Functional_Form_Risk_Settings';   %.csv
+    functional_form_OR_settings_file_name = 'Functional_Form_OR_Settings';   %.csv
+    optimization_settings_file_name = 'Optimization_Settings';   %.csv
+    output_format_settings_file_name = 'Output_Format_Settings';   %.csv
+    residuals_settings_file_name = 'Residuals_Settings';   %.csv
+    advanced_options_settings_file_name = 'Advanced_Options_Settings';   %.csv
     
     % String Constants that are used as headers in the data settings file 
     data_name = 'Data_Name';
@@ -344,6 +302,7 @@ properties (Constant)
     maxquantity1_index = 'MaxQuantity1_Index';
     maxquantity2_index = 'MaxQuantity2_Index';
     data_set = 'Data_Selected';
+    fix_endowments = 'Fix_Endowments';
     data_settings_headers = {HPZ_Constants.data_name,...
                             HPZ_Constants.file_name,...
                             HPZ_Constants.pref_class,...
@@ -353,7 +312,14 @@ properties (Constant)
                             HPZ_Constants.quantity2_index,...
                             HPZ_Constants.maxquantity1_index,...
                             HPZ_Constants.maxquantity2_index,...
-                            HPZ_Constants.data_set};
+                            HPZ_Constants.data_set,...
+                            HPZ_Constants.fix_endowments};
+    
+    % sub-directory for settings files (without the '/' in the beginning)
+    func_forms_settings_files_dir = 'Functional Forms Definitions';
+    pref_classes_list_file = 'þþPreferences_Classes_List'; %.csv
+    pref_class_file_base = 'Preferences_Class_'; %(pref_class).csv
+    func_form_file_base = 'Funciotnal_Form_Settings_'; %(pref_class)_(func_form).csv
     
     % max number of datasets that can be saved (not implemented)
     max_datasets = 100;

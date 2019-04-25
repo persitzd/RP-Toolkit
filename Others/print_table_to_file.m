@@ -34,11 +34,15 @@ for i=1:rows
     % print this row of the table
     for j=1:cols
         current_element = table{i,j};
-        current_element = current_element{1};
-        if isnumeric(current_element)
-            current_element = num2str(current_element);
+        if ~isempty(current_element)
+            if iscell(current_element)
+                current_element = current_element{1};
+            end
+            if isnumeric(current_element)
+                current_element = num2str(current_element);
+            end
+            fprintf(file_var, '%s,', current_element);
         end
-        fprintf(file_var, '%s,', current_element);
     end
     % move to next row
     fprintf(file_var, '\n');
