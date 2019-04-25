@@ -1,4 +1,4 @@
-function col_headers = HPZ_Consistency_Indices_Residuals_Headers (GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags)
+function [col_headers , num_of_columns] = HPZ_Consistency_Indices_Residuals_Headers (GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags)
 
 % this function returns a cell that contains all the column headers required 
 % for the residuals files for consistency and inconsistency indices
@@ -40,10 +40,10 @@ end
 if (VARIAN_flags(1) == 1)
     if (VARIAN_flags(2) == 1)
         if (VARIAN_flags(3) == 1)
-            num_of_columns = num_of_columns + 3;
+            num_of_columns = num_of_columns + 9; % (exact, lower, upper) * (3 aggreagtes)
         end
         if (VARIAN_flags(4) == 1)
-            num_of_columns = num_of_columns + 14;
+            num_of_columns = num_of_columns + 36; % (exact, lower, upper) * (3 aggreagtes) * (full + out-of-sample + residual + normalized-residual)
         end
     end
 end
@@ -53,7 +53,7 @@ if (HOUTMAN_flags(1) == 1)
             % not implemented
         end
         if (HOUTMAN_flags(4) == 1)
-            num_of_columns = num_of_columns + 6;
+            num_of_columns = num_of_columns + 4;
         end
     end
 end
@@ -143,27 +143,66 @@ end
 if (VARIAN_flags(1) == 1)
     if (VARIAN_flags(2) == 1)
         if (VARIAN_flags(3) == 1)
-            col_headers{current_col} = 'VARIAN Min in-Sample';
-            col_headers{current_col+1} = 'VARIAN Mean in-Sample';
-            col_headers{current_col+2} = 'VARIAN AVGSSQ in-Sample';
-            current_col = current_col + 3;
+            col_headers{current_col} = 'VARIAN Max in-Sample Component';
+            col_headers{current_col+1} = 'VARIAN Max Lower Bound in-Sample Component';
+            col_headers{current_col+2} = 'VARIAN Max Upper Bound in-Sample Component';
+            col_headers{current_col+3} = 'VARIAN Max in-Sample Difference';
+            col_headers{current_col+4} = 'VARIAN Max Lower Bound in-Sample Difference';
+            col_headers{current_col+5} = 'VARIAN Max Upper Bound in-Sample Difference';
+            col_headers{current_col+6} = 'VARIAN Mean in-Sample Component';
+            col_headers{current_col+7} = 'VARIAN Mean Lower Bound in-Sample Component';
+            col_headers{current_col+8} = 'VARIAN Mean Upper Bound in-Sample Component';
+            col_headers{current_col+9} = 'VARIAN Mean in-Sample Difference';
+            col_headers{current_col+10} = 'VARIAN Mean Lower Bound in-Sample Difference';
+            col_headers{current_col+11} = 'VARIAN Mean Upper Bound in-Sample Difference';
+            col_headers{current_col+12} = 'VARIAN AVGSSQ in-Sample Component';
+            col_headers{current_col+13} = 'VARIAN AVGSSQ Lower Bound in-Sample Component';
+            col_headers{current_col+14} = 'VARIAN AVGSSQ Upper Bound in-Sample Component';
+            col_headers{current_col+15} = 'VARIAN AVGSSQ in-Sample Difference';
+            col_headers{current_col+16} = 'VARIAN AVGSSQ Lower Bound in-Sample Difference';
+            col_headers{current_col+17} = 'VARIAN AVGSSQ Upper Bound in-Sample Difference';
+            current_col = current_col + 18;
         end
         if (VARIAN_flags(4) == 1)
-            col_headers{current_col} = 'VARIAN Min full index';
-            col_headers{current_col+1} = 'VARIAN Mean full index';
-            col_headers{current_col+2} = 'VARIAN AVGSSQ full index';
-            col_headers{current_col+3} = 'VARIAN full index is-exact';
-            col_headers{current_col+4} = 'VARIAN Min out-of-Sample index';
-            col_headers{current_col+5} = 'VARIAN Mean out-of-Sample index';
-            col_headers{current_col+6} = 'VARIAN AVGSSQ out-of-Sample index';
-            col_headers{current_col+7} = 'VARIAN out-of-Sample index is-exact';
-            col_headers{current_col+8} = 'VARIAN Min difference full from out-of-Sample';
-            col_headers{current_col+9} = 'VARIAN Min normalized difference full from out-of-Sample';
-            col_headers{current_col+10} = 'VARIAN Mean difference full from out-of-Sample';
-            col_headers{current_col+11} = 'VARIAN Mean normalized difference full from out-of-Sample';
-            col_headers{current_col+12} = 'VARIAN AVGSSQ difference full from out-of-Sample';
-            col_headers{current_col+13} = 'VARIAN AVGSSQ normalized difference full from out-of-Sample';
-            current_col = current_col + 14;
+            col_headers{current_col} = 'VARIAN Max full index';
+            col_headers{current_col+1} = 'VARIAN Max Lower Bound full index';
+            col_headers{current_col+2} = 'VARIAN Max Upper Bound full index';
+            col_headers{current_col+3} = 'VARIAN Mean full index';
+            col_headers{current_col+4} = 'VARIAN Mean Lower Bound full index';
+            col_headers{current_col+5} = 'VARIAN Mean Upper Bound full index';
+            col_headers{current_col+6} = 'VARIAN AVGSSQ full index';
+            col_headers{current_col+7} = 'VARIAN AVGSSQ Lower Bound full index';
+            col_headers{current_col+8} = 'VARIAN AVGSSQ Upper Bound full index';
+            
+            col_headers{current_col+9} = 'VARIAN Max out-of-Sample index';
+            col_headers{current_col+10} = 'VARIAN Max Lower Bound out-of-Sample index';
+            col_headers{current_col+11} = 'VARIAN Max Upper Bound out-of-Sample index';
+            col_headers{current_col+12} = 'VARIAN Mean out-of-Sample index';
+            col_headers{current_col+13} = 'VARIAN Mean Lower Bound out-of-Sample index';
+            col_headers{current_col+14} = 'VARIAN Mean Upper Bound out-of-Sample index';
+            col_headers{current_col+15} = 'VARIAN AVGSSQ out-of-Sample index';
+            col_headers{current_col+16} = 'VARIAN AVGSSQ Lower Bound out-of-Sample index';
+            col_headers{current_col+17} = 'VARIAN AVGSSQ Upper Bound out-of-Sample index';
+            
+            col_headers{current_col+18} = 'VARIAN Max difference full from out-of-Sample';
+            col_headers{current_col+19} = 'VARIAN Max normalized difference full from out-of-Sample';
+            col_headers{current_col+20} = 'VARIAN Max Lower Bound difference full from out-of-Sample';
+            col_headers{current_col+21} = 'VARIAN Max Lower Bound normalized difference full from out-of-Sample';
+            col_headers{current_col+22} = 'VARIAN Max Upper Bound difference full from out-of-Sample';
+            col_headers{current_col+23} = 'VARIAN Max Upper Bound normalized difference full from out-of-Sample';
+            col_headers{current_col+24} = 'VARIAN Mean difference full from out-of-Sample';
+            col_headers{current_col+25} = 'VARIAN Mean normalized difference full from out-of-Sample';
+            col_headers{current_col+26} = 'VARIAN Mean Lower Bound difference full from out-of-Sample';
+            col_headers{current_col+27} = 'VARIAN Mean Lower Bound normalized difference full from out-of-Sample';
+            col_headers{current_col+28} = 'VARIAN Mean Upper Bound difference full from out-of-Sample';
+            col_headers{current_col+29} = 'VARIAN Mean Upper Bound normalized difference full from out-of-Sample';
+            col_headers{current_col+30} = 'VARIAN AVGSSQ difference full from out-of-Sample';
+            col_headers{current_col+31} = 'VARIAN AVGSSQ normalized difference full from out-of-Sample';
+            col_headers{current_col+32} = 'VARIAN AVGSSQ Lower Bound difference full from out-of-Sample';
+            col_headers{current_col+33} = 'VARIAN AVGSSQ Lower Bound normalized difference full from out-of-Sample';
+            col_headers{current_col+34} = 'VARIAN AVGSSQ Upper Bound difference full from out-of-Sample';
+            col_headers{current_col+35} = 'VARIAN AVGSSQ Upper Bound normalized difference full from out-of-Sample';
+            current_col = current_col + 36;
         end
     end
 end
@@ -174,12 +213,10 @@ if (HOUTMAN_flags(1) == 1)
         end
         if (HOUTMAN_flags(4) == 1)
             col_headers{current_col} = 'HM full index';
-            col_headers{current_col+1} = 'HM full index is-exact';
-            col_headers{current_col+2} = 'HM residual index';
-            col_headers{current_col+3} = 'HM residual index is-exact';
-            col_headers{current_col+4} = 'HM difference full from residual';
-            col_headers{current_col+5} = 'HM normalized difference full from residual';
-            current_col = current_col + 6;
+            col_headers{current_col+1} = 'HM residual index';
+            col_headers{current_col+2} = 'HM difference full from residual';
+            col_headers{current_col+3} = 'HM normalized difference full from residual';
+            current_col = current_col + 4;
         end
     end
 end

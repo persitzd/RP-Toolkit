@@ -1,4 +1,4 @@
-function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, one_residuals_file, max_time_estimation, print_precision, waitbar_options, main_folder_for_results, current_run, total_runs) %#ok<INUSL>
+function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, max_time_estimation, print_precision, one_residuals_file, waitbar_settings, Varian_algorithm_settings, main_folder_for_results, current_run, total_runs) %#ok<INUSL>
 
 % this function is the container for the whole inconsistency indices module - 
 % all inconsistency indices procedures (consistency check, printing results to
@@ -10,18 +10,6 @@ function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, GARP_flags
 
 
 
-% determining whether to use a single waitbar or a seperate waitbar per subject 
-if (waitbar_options(1) == HPZ_Constants.waitbar_none)
-    single_waitbar = false;
-    active_waitbar = false;
-elseif (waitbar_options(1) == HPZ_Constants.waitbar_per_subject)
-    single_waitbar = false;
-    active_waitbar = true;
-elseif (waitbar_options(1) == HPZ_Constants.waitbar_single)
-    single_waitbar = true;
-    active_waitbar = false;
-end
-
 
 
 % these are just for convenience
@@ -30,6 +18,8 @@ consistency_residuals_flags_temp = [GARP_flags(2) , AFRIAT_flags(2) , VARIAN_fla
 consistency_residuals_flags = min(consistency_basic_flags, consistency_residuals_flags_temp);
 consistency_in_sample_flags = [GARP_flags(3) , AFRIAT_flags(3) , VARIAN_flags(3) , HOUTMAN_flags(3) , MPI_flags(3)]; %#ok<NASGU>
 consistency_out_sample_flags = [GARP_flags(4) , AFRIAT_flags(4) , VARIAN_flags(4) , HOUTMAN_flags(4) , MPI_flags(4)]; %#ok<NASGU>
+% initialization to avoid errors
+Mat_num_of_columns = 0;
 
 
 
@@ -50,6 +40,21 @@ for i=1:rows
         first_obs_row (counter_subjects) = i;
         counter_subjects = counter_subjects + 1;
     end
+end
+
+
+
+% determining whether to use a single waitbar or a separate waitbar per subject 
+if chosen_subjects_num < waitbar_settings(1)
+    single_waitbar = false;
+    active_waitbar = true;
+    % per subject waitbar for residuals
+    residuals_waitbar = true;
+else
+    single_waitbar = true;
+    active_waitbar = false;
+    % per subject waitbar for residuals and for bootstrap
+    residuals_waitbar = waitbar_settings(2);
 end
 
 
@@ -80,7 +85,7 @@ cleanup_close_file = onCleanup(@() fclose(file_handle));
 % name and headers for residuals file
 if sum(consistency_residuals_flags) ~= 0
     % getting the list of column headers for the residual file/files
-    residuals_col_headers = HPZ_Consistency_Indices_Residuals_Headers (GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags);
+    [residuals_col_headers , Mat_num_of_columns] = HPZ_Consistency_Indices_Residuals_Headers (GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags);
     % name of residuals file - we make sure that there isn't an existing file by the same name    
     while (true)
         consistency_residuals_str = char(strcat(HPZ_Constants.Consistency_action_file_name, {' - '}, 'Results Residuals - Date', {' '}, date, {' - '}, generate_random_str));
@@ -93,8 +98,15 @@ end
 
 
 
+% we will add this number in the end of each .png / .fig file,
+% in order not to run-over possible existing images
+Graph_flags(end+1) = str2num(generate_random_str); %#ok<ST2NM>
+
+
+
 %% finalize the output main file headers for distinct results
 fprintf(file_handle, '%s,', 'Subject');
+fprintf(file_handle, '%s,', 'Num of Observations');
 if (GARP_flags(1) == 1)
     fprintf(file_handle, '%s,%s,%s,%s,%s,%s,', ...
         'WARP Violations', '#Pairs', ...
@@ -105,12 +117,14 @@ if (AFRIAT_flags(1) == 1)
     fprintf(file_handle, '%s,', 'AFRIAT_Index');
 end
 if (VARIAN_flags(1) == 1)
-    fprintf(file_handle, '%s,%s,%s,%s,', ...
-        'VARIAN Index Min', 'VARIAN Index Mean', 'VARIAN Index AVG(SSQ)', 'Is exact');
+    fprintf(file_handle, '%s,%s,%s,%s,%s,%s,%s,%s,%s,', ...
+        'VARIAN Index Max', 'VARIAN Index Max Lower Bound', 'VARIAN Index Max Upper Bound', ...
+        'VARIAN Index Mean', 'VARIAN Index Mean Lower Bound', 'VARIAN Index Mean Upper Bound', ...
+        'VARIAN Index AVG(SSQ)', 'VARIAN Index AVG(SSQ) Lower Bound', 'VARIAN Index AVG(SSQ) Upper Bound');
 end
 if (HOUTMAN_flags(1) == 1)
-    fprintf(file_handle, '%s,%s,', ...
-        'Houtman Maks Index', 'Is exact');
+    fprintf(file_handle, '%s,', ...
+        'Houtman Maks Index');
 end
 if (MPI_flags(1) == 1)
     fprintf(file_handle, '%s,%s,', ...
@@ -147,7 +161,6 @@ end
 % subject to the results file/s
 for i=1:chosen_subjects_num
     
-    
     % code for a single waitbar instead of multiple waitbars (part 2 out of 3) 
     if (single_waitbar)
         % update the waitbar
@@ -160,26 +173,39 @@ for i=1:chosen_subjects_num
     % extracting the data that is necessary for all methods and calculations
     if subjects_index(i) < num_subjects
         data = data_matrix(first_obs_row(subjects_index(i)):((first_obs_row(subjects_index(i)+1))-1),:);
-        obs_num = data_matrix((first_obs_row(subjects_index(i)+1))-1,2); %#ok<NASGU>
+        obs_num = data_matrix((first_obs_row(subjects_index(i)+1))-1,2);
     else
         data = data_matrix(first_obs_row(subjects_index(i)):rows,:);
-        obs_num = data_matrix(rows,2); %#ok<NASGU>
+        obs_num = data_matrix(rows,2);
     end
     
+%     start_time = now;
+%     subject = num2str(data(1,1))
     
     
     % Calculating consistency tests and inconsistency indices
 
     % the function can return the disaggregated matrices of violations, we
     % don't report it.
-    [~,~,~,~,~,~,~,~,~, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN, Var_exact, HM, HM_exact, MPI, Mat] = ...
-                            HPZ_Subject_Consistency (data, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, active_waitbar, current_run, total_runs);
+    [~,~,~,~,~,~,~,~,~, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN_Bounds, HoutmanMaks, MPI, Mat] = ...
+                            HPZ_Subject_Consistency (data, Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, Mat_num_of_columns, Varian_algorithm_settings, main_folder_for_results, active_waitbar, residuals_waitbar, current_run, total_runs);
+
+%     end_time = now;
+%     running_time = datevec(end_time - start_time);
+%     months = running_time(2);
+%     days = running_time(3);
+%     hours = running_time(4);
+%     minutes = running_time(5);
+%     seconds = running_time(6);
+%     fprintf('\ntotal running time was:\n%d months, %d days, %d hours, %d minutes and %.3f seconds.\n',...
+%                                                                     months, days, hours, minutes, seconds);                    
 
     % precision of numbers when printing
     precision_string = strcat('%10.', num2str(print_precision), 'g');
 
     %% printing the results
     fprintf(file_handle, '%s,', num2str(data(1,1)));
+    fprintf(file_handle, '%s,', num2str(obs_num));
     if (GARP_flags(1) == 1)
         fprintf(file_handle, '%s,%s,%s,%s,%s,%s,', ...
             num2str(VIOLATIONS(1), precision_string), ...
@@ -193,16 +219,40 @@ for i=1:chosen_subjects_num
         fprintf(file_handle, '%s,', num2str(AFRIAT, precision_string));
     end
     if (VARIAN_flags(1) == 1)
-        fprintf(file_handle, '%s,%s,%s,%s,', ...
-            num2str(VARIAN(1), precision_string), ...
-            num2str(VARIAN(2), precision_string), ...
-            num2str(VARIAN(3), precision_string), ...
-            num2str(Var_exact, precision_string));
+        if VARIAN_Bounds(1) == VARIAN_Bounds(2)
+            % it is exact
+            fprintf(file_handle, '%s,%s,%s,', ...
+                num2str(VARIAN_Bounds(1), precision_string), '-', '-');
+        else
+            % it is not exact
+            fprintf(file_handle, '%s,%s,%s,', ...
+                '-', num2str(VARIAN_Bounds(1), precision_string), ...
+                     num2str(VARIAN_Bounds(2), precision_string));
+        end
+        if VARIAN_Bounds(3) == VARIAN_Bounds(4)
+            % it is exact
+            fprintf(file_handle, '%s,%s,%s,', ...
+                num2str(VARIAN_Bounds(3), precision_string), '-', '-');
+        else
+            % it is not exact
+            fprintf(file_handle, '%s,%s,%s,', ...
+                '-', num2str(VARIAN_Bounds(3), precision_string), ...
+                     num2str(VARIAN_Bounds(4), precision_string));
+        end
+        if VARIAN_Bounds(5) == VARIAN_Bounds(6)
+            % it is exact
+            fprintf(file_handle, '%s,%s,%s,', ...
+                num2str(VARIAN_Bounds(5), precision_string), '-', '-');
+        else
+            % it is not exact
+            fprintf(file_handle, '%s,%s,%s,', ...
+                '-', num2str(VARIAN_Bounds(5), precision_string), ...
+                     num2str(VARIAN_Bounds(6), precision_string));
+        end
     end
     if (HOUTMAN_flags(1) == 1)
-        fprintf(file_handle, '%s,%s,', ...
-            num2str(HM, precision_string), ...
-            num2str(HM_exact, precision_string));
+        fprintf(file_handle, '%s,', ...
+            num2str(HoutmanMaks, precision_string));
     end
     if (MPI_flags(1) == 1)
         fprintf(file_handle, '%s,%s', ...
