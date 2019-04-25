@@ -1,4 +1,4 @@
-function [aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, max_starting_points, ok] = HPZ_Screen_Optimization_Settings(aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, action_flag, numeric_flag, runs_counter)   
+function [aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, ok] = HPZ_Screen_Optimization_Settings(action_flag, numeric_flag, max_starting_points, possible_num_convergence_points, main_folder, runs_counter)   
 
 % this function promotes a user-interface screen to the user, allowing her
 % to make choices regarding the time limit and/or others limits on the
@@ -15,6 +15,10 @@ function [aggregation_flag, metric_flag, max_time_estimation, min_counter, paral
 % adding new elements to the screen.
 
 
+% read the saved settings for this screen
+[aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag] = HPZ_Optimization_Settings_Read(main_folder);
+
+
 
 % this little cell helps us to convert 0 and 1 to 'off' and 'on', respectively 
 enable = {'off','on'};
@@ -27,6 +31,11 @@ if isinf(max_time_estimation) || max_time_estimation == 0
 else
     max_time_str = num2str(max_time_estimation);
 end
+
+% initialization of variables that will help make sure that the user enters only numbers as time limit 
+NLLS_time = max_time_str;
+MMI_time = max_time_str;
+BI_time = max_time_str;
 
 
 
@@ -51,17 +60,17 @@ end
 
 
 
-% max_starting_points is initialized here, because it is related to 
-%   min_counter that is determined by the user in this screen.
-% also, if in the future one would want to let the user choose the
-%   max_starting_points, this screen is the one it should be in.
-if (numeric_flag == HPZ_Constants.numeric)
-    max_starting_points = HPZ_Constants.max_starting_points_numeric;
-elseif (numeric_flag == HPZ_Constants.analytic)
-    max_starting_points = HPZ_Constants.max_starting_points_analytic;
-elseif (numeric_flag == HPZ_Constants.semi_numeric)
-    max_starting_points = HPZ_Constants.max_starting_points_semi_numeric;
-end
+% % max_starting_points is initialized here, because it is related to 
+% %   min_counter that is determined by the user in this screen.
+% % also, if in the future one would want to let the user choose the
+% %   max_starting_points, this screen is the one it should be in.
+% if (numeric_flag == HPZ_Constants.numeric)
+%     max_starting_points = HPZ_Constants.max_starting_points_numeric;
+% elseif (numeric_flag == HPZ_Constants.analytic)
+%     max_starting_points = HPZ_Constants.max_starting_points_analytic;
+% elseif (numeric_flag == HPZ_Constants.semi_numeric)
+%     max_starting_points = HPZ_Constants.max_starting_points_semi_numeric;
+% end
 
 % this str will appear to the user as an option for min_counter, meaning
 % that min_counter (number of convergence points) should not limit the
@@ -69,11 +78,23 @@ end
 inf_str = 'inf';
 
 % cell array of all possible values for min_counter
-min_counter_values = HPZ_Constants.min_counter_values;
-min_counter_size = max(size(min_counter_values));
-if min_counter_values{min_counter_size} < max_starting_points
+min_counter_values_vector = possible_num_convergence_points; %HPZ_Constants.min_counter_values;
+min_counter_size = length(min_counter_values_vector);
+if min_counter_values_vector(min_counter_size) > max_starting_points
+    min_counter_values_vector = min_counter_values_vector(min_counter_values_vector <= max_starting_points);
+end
+if min_counter_values_vector(min_counter_size) < max_starting_points
     min_counter_size = min_counter_size + 1;
-    min_counter_values{min_counter_size} = num2str(max_starting_points);
+    min_counter_values_vector = [min_counter_values_vector , max_starting_points];
+end
+% we check if min_counter is one of those that appear in the list, otherwise we reset it 
+if ~any(min_counter == min_counter_values_vector) %#ok<*ST2NM>
+    min_counter = min_counter_values_vector(end);
+end
+% turn it from vector to cell array
+min_counter_values = cell(1 , length(min_counter_values_vector));
+for i=1:length(min_counter_values_vector)
+    min_counter_values{i} = num2str(min_counter_values_vector(i));
 end
 %min_counter_size = min_counter_size + 1;
 %min_counter_values{min_counter_size} = inf_str;
@@ -229,7 +250,7 @@ S.estimated_time_MMI_text = uicontrol('Parent',S.panel, ...
     'position',[375 , current_bottom+current_height/2 , 80 , text_height],...
     'backgroundc','white',...
     'fontsize',big_font_size,...
-    'callback',{@on_time_change_check_convergence,S});
+    'callback',{@on_time_change_check_time_and_convergence,S});
 
 
 %% Aggregation MMI
@@ -344,7 +365,7 @@ S.estimated_time_BI_text = uicontrol('Parent',S.panel, ...
                 'position',[375 , current_bottom+current_height/2 , 80 , text_height],...
                 'backgroundc','white',...
                 'fontsize',big_font_size,...
-                'callback',{@on_time_change_check_convergence,S});
+                'callback',{@on_time_change_check_time_and_convergence,S});
 %% End of BI settings
 
 
@@ -406,7 +427,7 @@ S.estimated_time_NLLS_text = uicontrol('Parent',S.panel, ...
                 'position',[375 , current_bottom+current_height/2 , 80 , text_height],...
                 'backgroundc','white',...
                 'fontsize',big_font_size,...
-                'callback',{@on_time_change_check_convergence,S});
+                'callback',{@on_time_change_check_time_and_convergence,S});
 
 %% Metric Method NLLS
 % current height of element
@@ -510,27 +531,60 @@ S.cancel_button = uicontrol('Parent',S.fh, 'style','push',...
 uiwait(S.fh)  % Prevent all other processes from starting until closed.
 
 
-function [] = on_time_change_check_convergence(varargin)
+function [] = on_time_change_check_time_and_convergence(varargin)
     
-    NLLS_time = str2num(get(S.estimated_time_NLLS_text,'string'));
+    previous_NLLS_time = NLLS_time;
+    NLLS_time = get(S.estimated_time_NLLS_text,'string');
+    if ~all(ismember(NLLS_time, '.1234567890')) || sum(ismember(NLLS_time, '.')) > 1
+        % the user entered something that is not a number
+        NLLS_time = previous_NLLS_time;
+        set(S.estimated_time_NLLS_text,'string',NLLS_time);
+    elseif all(ismember(NLLS_time, '0.'))
+        % '0' counts as 'no limit', so we delete it
+        NLLS_time = '';
+        set(S.estimated_time_NLLS_text,'string',NLLS_time);
+    end
     NLLS_convergence = str2num(min_counter_values{get(S.initial_points_NLLS_pop,'value')});
-    if (isempty(NLLS_time) || isinf(NLLS_time)) && isinf(NLLS_convergence)
+    if isempty(NLLS_time) && isinf(NLLS_convergence)
         % we changed time to inf, but max convergence points is also inf
         set(S.initial_points_NLLS_pop,'value',max(size(min_counter_values))-1);
     end
-    MMI_time = str2num(get(S.estimated_time_MMI_text,'string'));
+    
+    previous_MMI_time = MMI_time;
+    MMI_time = get(S.estimated_time_MMI_text,'string');
+    if ~all(ismember(MMI_time, '.1234567890')) || sum(ismember(MMI_time, '.')) > 1
+        % the user entered something that is not a number
+        MMI_time = previous_MMI_time;
+        set(S.estimated_time_MMI_text,'string',MMI_time);
+    elseif all(ismember(MMI_time, '0.'))
+        % '0' counts as 'no limit', so we delete it
+        MMI_time = '';
+        set(S.estimated_time_MMI_text,'string',MMI_time);
+    end
     MMI_convergence = str2num(min_counter_values{get(S.initial_points_MMI_pop,'value')});
-    if (isempty(MMI_time) || isinf(MMI_time)) && isinf(MMI_convergence)
+    if isempty(MMI_time) && isinf(MMI_convergence)
         % we changed time to inf, but max convergence points is also inf
         set(S.initial_points_MMI_pop,'value',max(size(min_counter_values))-1);
     end
-    BI_time = str2num(get(S.estimated_time_BI_text,'string'));
+    
+    previous_BI_time = BI_time;
+    BI_time = get(S.estimated_time_BI_text,'string');
+    if ~all(ismember(BI_time, '.1234567890')) || sum(ismember(BI_time, '.')) > 1
+        % the user entered something that is not a number
+        BI_time = previous_BI_time;
+        set(S.estimated_time_BI_text,'string',BI_time);
+    elseif all(ismember(BI_time, '0.'))
+        % '0' counts as 'no limit', so we delete it
+        BI_time = '';
+        set(S.estimated_time_BI_text,'string',BI_time);
+    end
     BI_convergence = str2num(min_counter_values{get(S.initial_points_BI_pop,'value')});
-    if (isempty(BI_time) || isinf(BI_time)) && isinf(BI_convergence)
+    if isempty(BI_time) && isinf(BI_convergence)
         % we changed time to inf, but max convergence points is also inf
         set(S.initial_points_BI_pop,'value',max(size(min_counter_values))-1);
     end
 end
+
 
 function [] = on_convergence_change_check_time(varargin)
     
@@ -538,19 +592,19 @@ function [] = on_convergence_change_check_time(varargin)
     
     NLLS_time = str2num(get(S.estimated_time_NLLS_text,'string'));
     NLLS_convergence = str2num(min_counter_values{get(S.initial_points_NLLS_pop,'value')});
-    if (isempty(NLLS_time) || isinf(NLLS_time)) && isinf(NLLS_convergence)
+    if isempty(NLLS_time) && isinf(NLLS_convergence)
         % we changed time to inf, but max convergence points is also inf
         set(S.estimated_time_NLLS_text,'string',arbitrary_time);
     end
     MMI_time = str2num(get(S.estimated_time_MMI_text,'string'));
     MMI_convergence = str2num(min_counter_values{get(S.initial_points_MMI_pop,'value')});
-    if (isempty(MMI_time) || isinf(MMI_time)) && isinf(MMI_convergence)
+    if isempty(MMI_time) && isinf(MMI_convergence)
         % we changed time to inf, but max convergence points is also inf
         set(S.estimated_time_MMI_text,'string',arbitrary_time);
     end
     BI_time = str2num(get(S.estimated_time_BI_text,'string'));
     BI_convergence = str2num(min_counter_values{get(S.initial_points_BI_pop,'value')});
-    if (isempty(BI_time) || isinf(BI_time)) && isinf(BI_convergence)
+    if isempty(BI_time) && isinf(BI_convergence)
         % we changed time to inf, but max convergence points is also inf
         set(S.estimated_time_BI_text,'string',arbitrary_time);
     end
@@ -650,6 +704,11 @@ function [] = ok_button_call(varargin)
         % Use serial version
         parallel_flag = false;
     end
+    
+    
+    % write the current setting to the settings file to be saved for next time  
+    HPZ_Optimization_Settings_Write(aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, main_folder);
+    
     
     % close the window
     close(S.fh);
