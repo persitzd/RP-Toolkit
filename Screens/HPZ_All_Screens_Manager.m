@@ -1,4 +1,4 @@
-function [ok, data_matrix, subjects_index, action_flag, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, pref_class, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, max_starting_points, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag] = HPZ_All_Screens_Manager(main_folder, runs_counter)
+function [ok, data_matrix, subjects_index, action_flag, Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, pref_class, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag, bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_All_Screens_Manager(main_folder, runs_counter)
 
 % This function calls to all relevant user-interface screens one after
 % another, and returns all the choices and user-preferences received from all of them 
@@ -9,23 +9,44 @@ function [ok, data_matrix, subjects_index, action_flag, GARP_flags, AFRIAT_flags
 
 
 
-% getting the saved settings
-[save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag] = HPZ_Settings_Read(main_folder);
-
 % initialization of all returned variables
-% (most of them are read from the settings file (such as function_flag that
-% is read but there are risk_function_flag and OR_function_flag),
-% the rest are initialized just to avoid errors)  
+% we need to initializae them, because if we perform parameter estimation, 
+% we won't assign anything to variables associated with consistency
+% indices, and vice versa, and that will result an error
 subjects_index = 0;
 action_flag = 0;
-function_flag = 0;
-numeric_flag = 0;
-param1_restrictions = [-inf , inf];
-param2_restrictions = [-inf , inf];
-max_starting_points = 1000;
-fix_corners_save = fix_corners;
-output_file_config_save = output_file_config;
-file_val_str = {'Value', 'Value', 'Value', 'Value', 'Value', 'Value'};
+Graph_flags = 0;
+GARP_flags = 0; 
+AFRIAT_flags = 0; 
+VARIAN_flags = 0; 
+HOUTMAN_flags = 0; 
+MPI_flags = 0; 
+pref_class = 0;   %#ok<NASGU>
+function_flag = 0;  
+numeric_flag = 0; 
+param1_restrictions = 0; 
+param2_restrictions = 0;
+fix_corners = 0;
+metric_flag = 0;
+aggregation_flag = 0;
+max_time_estimation = 0;
+min_counter = 0;
+parallel_flag = 0;
+output_file_config = 0;
+write_all_flag = 0;
+bootstrap_flag = 0;
+file_val_str = 0;
+residual_flag = 0;
+in_sample_flag = 0;
+out_sample_flag = 0;
+bootstrap_sample_sizes = 0;
+bootstrap_significance_level = 0;
+BI_threshold = 0;
+max_starting_points = 0;
+one_residuals_file = 0;
+debugger_mode = 0;
+waitbar_settings = 0;
+Varian_algorithm_settings = 0;
 
 
 
@@ -35,11 +56,16 @@ file_val_str = {'Value', 'Value', 'Value', 'Value', 'Value', 'Value'};
 % Also select whether a fix of the endowments in the data to exactly 1 is
 % required or not.
 
-[data_matrix, pref_class, fix_endowments, ok] = HPZ_Screen_Data_Set_Selection(fix_endowments, main_folder, runs_counter);
+[data_matrix, pref_class, ok] = HPZ_Screen_Data_Set_Selection(main_folder, runs_counter);
 % if the user pressed "cancel" - end the program
 if (ok == 0)
     return
 end
+
+
+
+%% Read Advanced Settings
+[bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Read(main_folder);
 
 
 
@@ -77,12 +103,24 @@ pc_screen_height = pc_screen_size(4);
 list_height =  min(max(100 , 13.7*max(size(HPZ_Constants.all_actions_names))) , HPZ_Constants.max_height_percent * pc_screen_height - HPZ_Constants.listdlg_extra_height); 
 list_size = [500 , list_height];
 
+% getting the saved action settings
+[action_choice] = HPZ_Action_Settings_Read(main_folder);
+
+action_flag = 0;
 while isempty(action_flag) || ~((action_flag == HPZ_Constants.Consistency_action) || (action_flag == HPZ_Constants.NLLS_action) || ...
                                     (action_flag == HPZ_Constants.MMI_action) || (action_flag == HPZ_Constants.BI_action))
     
-    [action_choice, ok] = listdlg('PromptString','Action Selection', 'InitialValue',action_choice,...
-        'SelectionMode','single', 'ListString',HPZ_Constants.all_actions_names,...
-        'Name','Action Selection', 'ListSize',list_size, 'uh',30, 'fus',8, 'ffs',8);
+    if pref_class ~= HPZ_Constants.no_pref
+        % we allow both Consistency Indices and Parameters Estimation (using NLLS / MMI / BI)  
+        [action_choice, ok] = listdlg('PromptString','Action Selection', 'InitialValue',action_choice,...
+            'SelectionMode','single', 'ListString',HPZ_Constants.all_actions_names,...
+            'Name','Action Selection', 'ListSize',list_size, 'uh',30, 'fus',8, 'ffs',8);
+    else
+        % we allow only Consistency Indices
+        [action_choice, ok] = listdlg('PromptString','Action Selection', 'InitialValue',action_choice,...
+            'SelectionMode','single', 'ListString',{HPZ_Constants.Consistency_action_name},...
+            'Name','Action Selection', 'ListSize',list_size, 'uh',30, 'fus',8, 'ffs',8);
+    end
     
     % if the user pressed "cancel" - end the program
     if (ok == 0)
@@ -102,6 +140,9 @@ while isempty(action_flag) || ~((action_flag == HPZ_Constants.Consistency_action
         action_flag = HPZ_Constants.BI_action;   % BI estimation
     end
 end
+
+% save the current choice to the action settings for next time
+HPZ_Action_Settings_Write(action_choice, main_folder);
 
 
 
@@ -161,7 +202,7 @@ if action_flag == HPZ_Constants.Consistency_action   % Consistency indices
     % here the user can choose which consistency and inconsistency measures
     % to calculate, and whether to calculate residuals for them, and which
     % method of residuals (in sample or out of sample)
-    [GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, ok] = HPZ_Screen_Consistency_Indices(GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, runs_counter);  
+    [Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, ok] = HPZ_Screen_Consistency_Indices(main_folder, runs_counter);  
     
     % if the user clicked "cancel", stop the program
     if (ok == 0)
@@ -179,34 +220,24 @@ if ((action_flag == HPZ_Constants.NLLS_action) || (action_flag == HPZ_Constants.
     if pref_class == HPZ_Constants.risk_pref
         % the following is specific information needed for the estimation  
         % of risk preferences
-        [risk_numeric_flag, risk_function_flag, risk_param1_restrictions, risk_param2_restrictions, fix_corners, ok] = HPZ_Screen_Functional_Form_Settings_Risk(action_flag, risk_numeric_flag, risk_function_flag, risk_param1_restrictions, risk_param2_restrictions, fix_corners, runs_counter);
-        % fix_corners_save is the value that will be saved in settings
-        fix_corners_save = fix_corners;
+        [numeric_flag, function_flag, param1_restrictions, param2_restrictions, fix_corners, ok] = HPZ_Screen_Functional_Form_Settings_Risk(action_flag, main_folder, runs_counter);
         % if the user clicked "cancel", stop the program
         if (ok == 0)
             return
         end
-        param1_restrictions = risk_param1_restrictions;
-        param2_restrictions = risk_param2_restrictions;
-        function_flag = risk_function_flag;
-        numeric_flag = risk_numeric_flag;
     elseif pref_class == HPZ_Constants.OR_pref
         % the following is specific information needed for the estimation 
         % of Kurtz et al. (2016) data set.
         fix_corners = false;   % allow corner choices
-        [OR_numeric_flag, OR_function_flag, OR_param1_restrictions, OR_param2_restrictions, ok] = HPZ_Screen_Functional_Form_Settings_OR(action_flag, OR_numeric_flag, OR_function_flag, OR_param1_restrictions, OR_param2_restrictions, runs_counter);        
+        [numeric_flag, function_flag, param1_restrictions, param2_restrictions, ok] = HPZ_Screen_Functional_Form_Settings_OR(action_flag, main_folder, runs_counter);        
         % if the user clicked "cancel", stop the program
         if (ok == 0)
             return
         end
-        param1_restrictions = OR_param1_restrictions;
-        param2_restrictions = OR_param2_restrictions;
-        function_flag = OR_function_flag;
-        numeric_flag = OR_numeric_flag;
     end
     
 	% if estimation was chosen we need some more information
-	[aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, max_starting_points, ok] = HPZ_Screen_Optimization_Settings(aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, action_flag, numeric_flag, runs_counter);
+	[aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, ok] = HPZ_Screen_Optimization_Settings(action_flag, numeric_flag, max_starting_points, possible_num_convergence_points, main_folder, runs_counter);
     % if the user clicked "cancel", stop the program
     if (ok == 0)
         return
@@ -219,25 +250,18 @@ if ((action_flag == HPZ_Constants.NLLS_action) || (action_flag == HPZ_Constants.
         fix_corners = true;
     end
     
-    [output_file_config, output_file_config_save, write_all_flag, bootstrap_flag, file_val_str, ok] = HPZ_Screen_Output_File_Format(output_file_config, write_all_flag, bootstrap_flag, action_flag, aggregation_flag, metric_flag, runs_counter);
+    [output_file_config, write_all_flag, bootstrap_flag, file_val_str, ok] = HPZ_Screen_Output_File_Format(action_flag, aggregation_flag, metric_flag, main_folder, runs_counter);
     % if the user clicked "cancel", stop the program
     if (ok == 0)
         return
     end
     
     %% residual settings
-    [residual_flag, in_sample_flag, out_sample_flag, ok] = HPZ_Screen_Residual_Calculation_Settings(residual_flag, in_sample_flag, out_sample_flag, runs_counter);
+    [residual_flag, in_sample_flag, out_sample_flag, ok] = HPZ_Screen_Residual_Calculation_Settings(main_folder, runs_counter);
     % if the user clicked "cancel", stop the program
     if (ok == 0)
         return
     end
-end
-
-
-
-if true%(save_user_choices)
-    % saving the user's decisions and settings for next time
-    HPZ_Settings_Write(save_user_choices, fix_endowments, action_choice, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, risk_numeric_flag, OR_numeric_flag, risk_function_flag, OR_function_flag, risk_param1_restrictions, risk_param2_restrictions, OR_param1_restrictions, OR_param2_restrictions, fix_corners_save, aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, output_file_config_save, write_all_flag, bootstrap_flag, residual_flag, in_sample_flag, out_sample_flag, main_folder);
 end
 
 
