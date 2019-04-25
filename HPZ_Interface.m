@@ -31,26 +31,6 @@ main_folder_for_results = main_folder;
 
 
 
-% what type of waitbar to show (none / single per run / separate per subject / smart waitbar) 
-general_waitbar_options = HPZ_Constants.waitbar_smart; 
-%general_waitbar_options = HPZ_Constants.waitbar_per_subject;   % show a separate waitbar for each subject 
-%general_waitbar_options = HPZ_Constants.waitbar_single;        % show a single waitbar for all subjects 
-%general_waitbar_options = HPZ_Constants.waitbar_none;          % do not show any waitbar  
-
-% when there is a single waitbar - whether to use a special per-subject 
-% waitbar for bootstrap and/or for residuals, or not
-% the first value is for bootstrap, the second is for residuals
-bootstrap_waitbar = true;
-residuals_waitbar = true;
-
-
-
-% If 1, the function doesn't print the results, if 0 it prints the results
-% normally.
-% It is normally set to 0, 
-% but while residuals are being calculated, it is set to 1
-%global do_not_write
-
 % set off warning when adding a sheet using xlswrite
 warning('off','MATLAB:xlswrite:AddSheet');
 
@@ -63,6 +43,7 @@ warning('off','MATLAB:xlswrite:AddSheet');
 data_matrix = cell(1,1);
 subjects_index = cell(1,1);
 action_flag = cell(1,1);
+Graph_flags = cell(1,1);
 GARP_flags = cell(1,1);
 AFRIAT_flags = cell(1,1); 
 VARIAN_flags = cell(1,1);
@@ -77,7 +58,6 @@ fix_corners = cell(1,1);
 metric_flag = cell(1,1);
 aggregation_flag = cell(1,1);
 max_time_estimation = cell(1,1);
-max_starting_points = cell(1,1);
 min_counter = cell(1,1); 
 parallel_flag = cell(1,1); 
 output_file_config = cell(1,1);
@@ -87,8 +67,14 @@ file_val_str = cell(1,1);
 residual_flag = cell(1,1);
 in_sample_flag = cell(1,1);
 out_sample_flag = cell(1,1);
+bootstrap_sample_sizes = cell(1,1);
+bootstrap_significance_level = cell(1,1);
+BI_threshold = cell(1,1);
+max_starting_points = cell(1,1);
 one_residuals_file = cell(1,1);
-significance_level = cell(1,1);
+debugger_mode = cell(1,1);
+waitbar_settings = cell(1,1);
+Varian_algorithm_settings = cell(1,1);
 print_precision = cell(1,1);
 
 % this loop is needed for multiple runs (each round of the loop = one run) 
@@ -106,8 +92,7 @@ while (another_run)
     % (2) In the last screen, the user is asked whether he desires to make
     %     more runs (with a different data set / method / etc.), or whther
     %     he is finished and the program should start running (another_run==false) 
-    [ok, data_matrix{i}, subjects_index{i}, action_flag{i}, GARP_flags{i}, AFRIAT_flags{i}, VARIAN_flags{i}, HOUTMAN_flags{i}, MPI_flags{i}, pref_class{i}, function_flag{i}, numeric_flag{i}, param1_restrictions{i}, param2_restrictions{i}, fix_corners{i}, metric_flag{i}, aggregation_flag{i}, max_time_estimation{i}, max_starting_points{i}, min_counter{i}, parallel_flag{i}, output_file_config{i}, write_all_flag{i}, bootstrap_flag{i}, file_val_str{i}, residual_flag{i}, in_sample_flag{i}, out_sample_flag{i}] = HPZ_All_Screens_Manager(main_folder, runs_counter);
-    %HPZ_All_Screens_Manager(runs_counter);
+    [ok, data_matrix{i}, subjects_index{i}, action_flag{i}, Graph_flags{i}, GARP_flags{i}, AFRIAT_flags{i}, VARIAN_flags{i}, HOUTMAN_flags{i}, MPI_flags{i}, pref_class{i}, function_flag{i}, numeric_flag{i}, param1_restrictions{i}, param2_restrictions{i}, fix_corners{i}, metric_flag{i}, aggregation_flag{i}, max_time_estimation{i}, min_counter{i}, parallel_flag{i}, output_file_config{i}, write_all_flag{i}, bootstrap_flag{i}, file_val_str{i}, residual_flag{i}, in_sample_flag{i}, out_sample_flag{i}, bootstrap_sample_sizes{i}, bootstrap_significance_level{i}, BI_threshold{i}, max_starting_points{i}, one_residuals_file{i}, debugger_mode{i}, waitbar_settings{i}, Varian_algorithm_settings{i}] = HPZ_All_Screens_Manager(main_folder, runs_counter);
     % if the user pressed "cancel" in one of the screens, then this run was cancelled 
     if (ok == 0)
         runs_counter = runs_counter - 1;
@@ -133,38 +118,17 @@ for i = 1:runs_counter
     
     start_time = now;   % we want to tell the user how long the whole run took
     
-    one_residuals_file{i} = true;   % change this to false in order to print the residuals as a separate file for each subject, instead of one file with separate sheets
-    significance_level{i} = HPZ_Constants.significance_level;
     print_precision{i} = HPZ_Constants.print_precision;
-    
-    % implementation of the smart waitbar for this run
-    if general_waitbar_options == HPZ_Constants.waitbar_smart
-        % number of subjects
-        chosen_subjects_num = length(subjects_index{i});
-        % we use a single waitbar in 2 cases:
-        % (1) there are at least 10 subjects
-        % (2) even if there are less than 10 subjects (but at least 2),
-        %     we use a single waitbar if we perform residuals or bootstrap,
-        %     since anyway these have their own per-subject waitbars.
-        if chosen_subjects_num >= HPZ_Constants.waitbar_smart_num_of_subjects || ( chosen_subjects_num >= 2 && ( action_flag{i} ~= HPZ_Constants.Consistency_action && ((bootstrap_flag{i} && bootstrap_waitbar) || (residual_flag{i} && out_sample_flag{i} && residuals_waitbar)) ) )
-            waitbar_options = [HPZ_Constants.waitbar_single, bootstrap_waitbar, residuals_waitbar];
-        else
-            waitbar_options = [HPZ_Constants.waitbar_per_subject, bootstrap_waitbar, residuals_waitbar];
-        end
-    else
-        % as is
-        waitbar_options = [general_waitbar_options, bootstrap_waitbar, residuals_waitbar];
-    end
     
     try
         % All calculations and printing to results file occur here
         if action_flag{i} == HPZ_Constants.Consistency_action
             % Consistency Indices
-            HPZ_Consistency_Indices_Manager(data_matrix{i}, subjects_index{i}, GARP_flags{i}, AFRIAT_flags{i}, VARIAN_flags{i}, HOUTMAN_flags{i}, MPI_flags{i}, one_residuals_file{i}, max_time_estimation{i}, print_precision{i}, waitbar_options, main_folder_for_results, i, runs_counter);  
+            HPZ_Consistency_Indices_Manager(data_matrix{i}, subjects_index{i}, Graph_flags{i}, GARP_flags{i}, AFRIAT_flags{i}, VARIAN_flags{i}, HOUTMAN_flags{i}, MPI_flags{i}, max_time_estimation{i}, print_precision{i}, one_residuals_file{i}, waitbar_settings{i}, Varian_algorithm_settings{i}, main_folder_for_results, i, runs_counter);  
 
         elseif (action_flag{i} == HPZ_Constants.NLLS_action) || (action_flag{i} == HPZ_Constants.MMI_action) || (action_flag{i} == HPZ_Constants.BI_action)
             % Parameters Estimation (NLLS / MMI / BI)
-            HPZ_Estimation_Manager(data_matrix{i}, subjects_index{i}, action_flag{i}, pref_class{i}, function_flag{i}, numeric_flag{i}, param1_restrictions{i}, param2_restrictions{i}, fix_corners{i}, metric_flag{i}, aggregation_flag{i}, max_time_estimation{i}, min_counter{i}, max_starting_points{i}, parallel_flag{i}, output_file_config{i}, write_all_flag{i}, bootstrap_flag{i}, file_val_str{i}, residual_flag{i}, in_sample_flag{i}, out_sample_flag{i}, one_residuals_file{i}, significance_level{i}, print_precision{i}, waitbar_options, main_folder_for_results, i, runs_counter);
+            HPZ_Estimation_Manager(data_matrix{i}, subjects_index{i}, action_flag{i}, pref_class{i}, function_flag{i}, numeric_flag{i}, param1_restrictions{i}, param2_restrictions{i}, fix_corners{i}, metric_flag{i}, aggregation_flag{i}, max_time_estimation{i}, min_counter{i}, parallel_flag{i}, output_file_config{i}, write_all_flag{i}, bootstrap_flag{i}, file_val_str{i}, residual_flag{i}, in_sample_flag{i}, out_sample_flag{i}, print_precision{i}, bootstrap_sample_sizes{i}, bootstrap_significance_level{i}, BI_threshold{i}, max_starting_points{i}, one_residuals_file{i}, debugger_mode{i}, waitbar_settings{i}, main_folder_for_results, i, runs_counter);
 
         end
     catch error_var
@@ -179,8 +143,16 @@ for i = 1:runs_counter
     hours = running_time(4);
     minutes = running_time(5);
     seconds = running_time(6);
-    fprintf('\nRun number %d running time was:\n%d months, %d days, %d hours, %d minutes and %.3f seconds.\n\n',...
-                                                                    i, months, days, hours, minutes, seconds);
+    if months
+        fprintf('\nRun number %d running time was:\n%d months, %d days, %d hours and %d minutes.\n\n',...
+                                                                        i, months, days, hours, minutes);
+    elseif days
+        fprintf('\nRun number %d running time was:\n%d days, %d hours, %d minutes and %.0f seconds.\n\n',...
+                                                                        i, days, hours, minutes, seconds);
+    else
+        fprintf('\nRun number %d running time was:\n%d hours, %d minutes and %.3f seconds.\n\n',...
+                                                                        i, hours, minutes, seconds);
+    end
 end
 
 
