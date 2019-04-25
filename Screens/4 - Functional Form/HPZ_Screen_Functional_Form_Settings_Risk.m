@@ -1,4 +1,4 @@
-function [numeric_flag, function_flag, param1_restrictions, param2_restrictions, fix_corners, ok] = HPZ_Screen_Functional_Form_Settings_Risk(action_flag, numeric_flag, function_flag, param1_restrictions, param2_restrictions, fix_corners, runs_counter)
+function [numeric_flag, function_flag, param1_restrictions, param2_restrictions, fix_corners, ok] = HPZ_Screen_Functional_Form_Settings_Risk(action_flag, main_folder, runs_counter)
 
 % this function promotes a user-interface screen to the user, allowing her
 % to make choices regarding the functional form and the solution approach
@@ -13,6 +13,9 @@ function [numeric_flag, function_flag, param1_restrictions, param2_restrictions,
 % it is also recommended to use numeric variables in the same manner when
 % adding new elements to the screen.
 
+
+% read the saved settings for this screen
+[numeric_flag, function_flag, param1_restrictions, param2_restrictions, fix_corners] = HPZ_Functional_Form_risk_Settings_Read(main_folder);
 
 
 % this little cell helps us to convert 0 and 1 to 'off' and 'on', respectively 
@@ -385,6 +388,10 @@ function [] = ok_button_call(varargin)
             fix_corners = true;
         end
     end
+    
+    
+    % write the current setting to the settings file to be saved for next time
+    HPZ_Functional_Form_risk_Settings_Write(numeric_flag, function_flag, param1_restrictions, param2_restrictions, fix_corners, main_folder);
     
 
     % close the window
