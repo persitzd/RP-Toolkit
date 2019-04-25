@@ -1,6 +1,9 @@
 function [subsets_of_observations, num_of_subsets] = HPZ_Indices_Problem_Distribute(relevant_RP, relevant_SRP, varargin)
 
-
+% NOTE: This function is used to separate the observations (nodes) to 
+% "strongly connected components". But in our case it might be a bit
+% comlicated, as we don't have just one graph but two graphs
+% (one for DRP and one for SDRP).
 
 % When calculating various Inconsistency Indices (e.g. Varian, Houtman-Maks), 
 % the calculations can be performed separately for disjoint subsets of
@@ -25,13 +28,13 @@ function [subsets_of_observations, num_of_subsets] = HPZ_Indices_Problem_Distrib
 % calculation problem related to it, for example: 
 % * in the case of the Varian Index, we would like to have disjoint subsets 
 %   such that there is no cycle of strict-revealed-preferred relations that 
-%   involves observation from different subsets.
+%   involves observations from different subsets.
 % * in the case of the Houtman-Maks Index with 3 or more goods, we would 
 %   like to have disjoint subsets such that there is no GARP-violating 
-%   cycle that involves observation from different subsets.
+%   cycle that involves observations from different subsets.
 % * in the case of the Houtman-Maks Index with 2 goods, we would like to 
 %   have disjoint subsets such that there is no GARP-violating cycle of
-%   length 2 that involves observation from different subsets.
+%   length 2 that involves observations from different subsets.
 % The parameters "relevant_RP" & "relevant_SRP" allows the distribution
 % according to different types of cycles and relations.
 
@@ -114,7 +117,7 @@ while sum(obs_left) > 0
         % deleting observations that are already in temp_subset
         j = 1;
         while j <= length(related_obs_temp)
-            if any(related_obs_temp(j) == temp_subset)
+            if any(related_obs_temp(j) == temp_subset)   % ismember(related_obs_temp(j),temp_subset)
                 related_obs_temp = related_obs_temp([1:(j-1) , (j+1):end]);
             else
                 j = j + 1;
