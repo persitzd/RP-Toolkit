@@ -51,8 +51,9 @@ for graph_type=1:3
                     if Graph_Matrix(i,j)
                         Graph_Matrix_temp = Graph_Matrix;
                         Graph_Matrix_temp(i,j) = 0;
-                        [cost, ~] = dijkstra_edge_count(Graph_Matrix_temp, i, j);
-                        if ~isinf(cost)
+                        is_there_path = is_there_a_path(Graph_Matrix_temp, i, j);
+                        %[cost, ~] = dijkstra_edge_count(Graph_Matrix_temp, i, j);
+                        if is_there_path %~isinf(cost)
                             Graph_Matrix(i,j) = 0;
                         end
                     end
