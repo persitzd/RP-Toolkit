@@ -13,10 +13,7 @@ function [Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MP
 
 % read the saved settings for this screen
 [Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags] = HPZ_Consistency_Indices_Settings_Read(main_folder);
-VARIAN_flags
-a1 = (VARIAN_flags(3) && ~VARIAN_flags(4))
-a2 = (~VARIAN_flags(3) && VARIAN_flags(4))
-a3 = (VARIAN_flags(3) && VARIAN_flags(4))
+
 
 % this little cell helps us to convert 0 and 1 to 'off' and 'on', respectively 
 enable = {'off','on'};
