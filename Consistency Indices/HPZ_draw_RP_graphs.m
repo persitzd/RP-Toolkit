@@ -31,11 +31,12 @@ for graph_type=1:3
     elseif graph_type==2 || graph_type==3
         to_draw = (Graph_flags(graph_type) && sum(sum(GARP)) > 0);
         layout = 'force';
+        % when printing weights, they are unreadable unless we use circle layout  
+        if Graph_flags(4)==1
+            layout = 'circle';
+        end
     end
-    % when printing weights, they are unreadable unless we use circle layout  
-    if Graph_flags(4)==1
-        layout = 'circle';
-    end
+    
     % now to the real thing:
     if to_draw
         % create the matrix that represents the graph (depends on graph type) 
@@ -117,23 +118,29 @@ for graph_type=1:3
         
         % font size of node label
         if obs_num <= 15
-            font_size = 10;
+            node_font_size = 10;
+            edge_font_size = 7.0;
         elseif obs_num <= 25
-            font_size = 9;
+            node_font_size = 9;
+            edge_font_size = 6.0;
         elseif obs_num <= 50
-            font_size = 8;
+            node_font_size = 8;
+            edge_font_size = 5.0;
         elseif obs_num <= 100
-            font_size = 7;
+            node_font_size = 7;
+            edge_font_size = 4.5;
         elseif obs_num <= 200
-            font_size = 6;
+            node_font_size = 6;
+            edge_font_size = 4.0;
         else   % obs_num > 200
-            font_size = 5;
+            node_font_size = 5;
+            edge_font_size = 3.5;
         end
         
         % print the revealed preference graph to .png file :
         f = figure('visible', 'off'); 
         if Graph_flags(4)==0
-            RP_graph = plot(G, 'Layout',layout, 'LineWidth',(2*G.Edges.Weight+1)/3, 'LineStyle',line_style, 'NodeLabel',names, 'NodeFontSize',font_size);
+            RP_graph = plot(G, 'Layout',layout, 'LineWidth',(2*G.Edges.Weight+1)/3, 'LineStyle',line_style, 'NodeLabel',names, 'NodeFontSize',node_font_size, 'EdgeFontSize',edge_font_size);
         elseif Graph_flags(4)==1
             %RP_graph = plot(G, 'Layout',layout, 'EdgeLabel',G.Edges.Weight*(-1));
             weights = G.Edges.Weight*(-1);
@@ -141,7 +148,7 @@ for graph_type=1:3
             for w=1:length(weights)
                 weights_labels{w} = num2str(weights(w), '%10.3f');
             end
-            RP_graph = plot(G, 'Layout',layout, 'EdgeLabel',weights_labels, 'LineStyle',line_style, 'NodeLabel',names, 'NodeFontSize',font_size);
+            RP_graph = plot(G, 'Layout',layout, 'EdgeLabel',weights_labels, 'LineStyle',line_style, 'NodeLabel',names, 'NodeFontSize',node_font_size, 'EdgeFontSize',edge_font_size);
         end
         %RP.XData
         %RP.YData
