@@ -7,6 +7,9 @@ function [HM, HM_residuals, HM_raw, HM_raw_residuals, HM_Mat] = HPZ_Houtman_Maks
 %     DRP(i,i)=0;
 % end
 
+% initialization to avoid error when residuals are not required
+HM_Mat = [];
+
 
 
     
@@ -33,14 +36,6 @@ if num_of_goods == 2
         HM_residuals = zeros(obs_num, 1);
         
     else
-        
-        % define the waitbar
-        if (residuals_waitbar)
-            waitbar_name = char(strcat(HPZ_Constants.waitbar_name_estimation, {' '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs),')'));
-            waitbar_msg = char(strcat(HPZ_Constants.waitbar_recovery, {' '}, num2str(subject_ID), {' '}, HPZ_Constants.waitbar_residuals_HOUTMAN));
-            new_bar_val = 0;
-            h_wb = wide_waitbar(new_bar_val, {waitbar_msg, ''}, waitbar_name, HPZ_Constants.waitbar_width_multiplier, [0,0.12]);
-        end
         
         % divide the observations to smallest possible subsets such that
         % observations from different subsets never belong to one 2-length cycle 
@@ -77,6 +72,14 @@ if num_of_goods == 2
         HM = HM_raw_accumulated / obs_num;
 
         
+        
+        % define the waitbar
+        if (residuals_waitbar)
+            waitbar_name = char(strcat(HPZ_Constants.waitbar_name_estimation, {' '}, '(', HPZ_Constants.current_run_waitbar, {' '}, num2str(current_run), {' '}, HPZ_Constants.total_runs_waitbar, {' '}, num2str(total_runs),')'));
+            waitbar_msg = char(strcat(HPZ_Constants.waitbar_recovery, {' '}, num2str(subject_ID), {' '}, HPZ_Constants.waitbar_residuals_HOUTMAN));
+            new_bar_val = 0;
+            h_wb = wide_waitbar(new_bar_val, {waitbar_msg, ''}, waitbar_name, HPZ_Constants.waitbar_width_multiplier, [0,0.12]);
+        end
         
         % now for the residuals themselves
         for i=1:num_of_subsets
@@ -201,21 +204,10 @@ else
     % initializing the residuals (just to prevent program from crashing)
     HM_raw_residuals = 0;
     HM_residuals = 0;
-
-end
-
-
-
-
-
-% initialization to avoid error when residuals are not required
-HM_Mat = [];
-
-%% HOUTMAN-MAKS residuals - assignment to matrix
-if HOUTMAN_flags(2)
-
-    % out of sample (the only option actually for residuals)
-    if HOUTMAN_flags(4)
+    
+    
+    
+    if HOUTMAN_flags(2) && HOUTMAN_flags(4)
         
         % define the waitbar
         if (residuals_waitbar)
@@ -285,33 +277,45 @@ if HOUTMAN_flags(2)
         end
         
         
-        % initialization of residuals matrix
-        num_of_columns = 4;
-        HM_Mat = zeros(obs_num, num_of_columns);
-        
-        % initialization of column counter
-        col_counter = 1;
-        
-        for i=1:obs_num
-            HM_Mat(i, col_counter) = HM;                            % full index
-            HM_Mat(i, col_counter + 1) = HM_residuals(i);           % partial index
-            HM_Mat(i, col_counter + 2) = HM - HM_residuals(i);      % difference
-            % (we added this check, because the whole point of the
-            % normalized difference is that it is either positive
-            % or zero, but due to calculation issues it sometimes
-            % resulted stuff like "2.77555756156289E-17")
-            normalized_difference = HM - HM_residuals(i)*(obs_num-1)/obs_num;
-            if abs(normalized_difference) < 10^(-15)
-                normalized_difference = 0;
-            end
-            HM_Mat(i, col_counter + 3) = normalized_difference;     % normalized difference
-        end
-
-        % update the counter
-        col_counter = col_counter + 4; %#ok<NASGU>
     end
 
 end
+
+
+
+
+
+%% HOUTMAN-MAKS residuals - assignment to matrix
+if HOUTMAN_flags(2) && HOUTMAN_flags(4)
+    % out of sample (the only option actually for residuals)
+        
+    % initialization of residuals matrix
+    num_of_columns = 4;
+    HM_Mat = zeros(obs_num, num_of_columns);
+
+    % initialization of column counter
+    col_counter = 1;
+
+    for i=1:obs_num
+        HM_Mat(i, col_counter) = HM;                            % full index
+        HM_Mat(i, col_counter + 1) = HM_residuals(i);           % partial index
+        HM_Mat(i, col_counter + 2) = HM - HM_residuals(i);      % difference
+        % (we added this check, because the whole point of the
+        % normalized difference is that it is either positive
+        % or zero, but due to calculation issues it sometimes
+        % resulted stuff like "2.77555756156289E-17")
+        normalized_difference = HM - HM_residuals(i)*(obs_num-1)/obs_num;
+        if abs(normalized_difference) < 10^(-15)
+            normalized_difference = 0;
+        end
+        HM_Mat(i, col_counter + 3) = normalized_difference;     % normalized difference
+    end
+
+    % update the counter
+    col_counter = col_counter + 4; %#ok<NASGU>
+    
+end
+
 
 
 end
