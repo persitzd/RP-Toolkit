@@ -400,10 +400,13 @@ function [] = ok_button_call(varargin)
                 data_list_maxquantity1{data_set},...
                 data_list_maxquantity2{data_set}];
     
-    [data_matrix, success] = HPZ_Data_Format (file_path, locations);
+    [data_matrix, success, is_valid] = HPZ_Data_Format (file_path, locations);
     if (~success)
         % the file does not exist or is not available - we end this run
         msgbox(char(strcat(HPZ_Constants.could_not_read_file_1, {' '}, file_path, HPZ_Constants.could_not_read_file_2)));
+        % remove the file from the list
+        remove_file_call();
+    elseif (~is_valid)
         % remove the file from the list
         remove_file_call();
     else
@@ -416,25 +419,29 @@ function [] = ok_button_call(varargin)
         % number of endowment significantly different from 1
         num_of_errors = sum ( (endowments > 1+HPZ_Constants.fix_endowments_error) | (endowments < 1/(1+HPZ_Constants.fix_endowments_error)) );
         if (num_of_errors)
-            warning('There were %d cases that the endowment was significantly (more than %0.5g) different from 1. If your data endowments are not meant to be set to 1, the estimation may give erroneous results. If you chose the "fix endowments" option, the endowments were fixed to 1 in some manner, but you may still want to check your data.', num_of_errors, HPZ_Constants.fix_endowments_error);
+            % the file does not exist or is not available - we end this run
+            msgbox(char(strcat({'There were '}, num2str(num_of_errors), {' cases that the chosen bundle was significantly not on the budget line (the expenditure of the chosen bundle is more than '}, num2str(1+HPZ_Constants.fix_endowments_error), {' or less than '}, num2str(1/(1+HPZ_Constants.fix_endowments_error)), {' times the budget constraint). Please fix your data such that all observations will be (at least approximately) on the budget line.'})));
+            % remove the file from the list
+            remove_file_call();
+        else
+            % fixing the bundles so their endowments will be equal exactly to 1.
+            % this fix is needed because of rounding that makes the endowment a little
+            % different from 1, which may damage the estimations to some extent
+            if fix_endowments
+                % if the user chose to fix all bundles so their endwoments will be exactly 1, 
+                % if the difference (in percentage) between 1 and the endowment is more
+                % than this threshold, a warning will be given
+                data_matrix = HPZ_Fix_Endowments_To_One(data_matrix, 1);
+            end
+
+            data_pref_class = data_list_prefs{data_set};
+            ok = 1;
+
+            HPZ_Data_Set_Selection_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments, main_folder);
+            % close the window
+            close(fh);
         end
 
-        % fixing the bundles so their endowments will be equal exactly to 1.
-        % this fix is needed because of rounding that makes the endowment a little
-        % different from 1, which may damage the estimations to some extent
-        if fix_endowments
-            % if the user chose to fix all bundles so their endwoments will be exactly 1, 
-            % if the difference (in percentage) between 1 and the endowment is more
-            % than this threshold, a warning will be given
-            data_matrix = HPZ_Fix_Endowments_To_One(data_matrix, 1);
-        end
-
-        data_pref_class = data_list_prefs{data_set};
-        ok = 1;
-        
-        HPZ_Data_Set_Selection_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments, main_folder);
-        % close the window
-        close(fh);
     end
 
 end
