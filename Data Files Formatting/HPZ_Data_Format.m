@@ -1,4 +1,4 @@
-function [mat, success] = HPZ_Data_Format (file_path, locations)
+function [mat, success, is_valid] = HPZ_Data_Format (file_path, locations)
 
 % The function formats a data file to a matrix
 
@@ -37,7 +37,7 @@ end
 
 if success
     % check if the file is formatted correctly - if not it will print an error and will crash 
-    HPZ_check_file_format_correctness (mat);
+    is_valid = HPZ_check_file_format_correctness (mat);
 end
 
 
