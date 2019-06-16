@@ -231,7 +231,7 @@ end
 
 % initializations of inconsistency indices results variables
 AFRIAT = 0;
-VARIAN_Bounds = [0,0,0,0,0,0];
+VARIAN_Bounds = [0,0,0,0,0,0,0,0,0];
 HoutmanMaks = 0;
 MPI = [0,0];
 
