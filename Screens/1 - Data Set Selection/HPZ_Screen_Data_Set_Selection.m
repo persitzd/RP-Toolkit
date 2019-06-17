@@ -210,7 +210,7 @@ browse_file = uicontrol('Parent',dataset_panel, ...
 
 %% Fix Endowments (or not)
 % current height of element
-current_height = 60;
+current_height = 50;
 % current bottom coordinate
 current_bottom = current_bottom - move_down - current_height;
 bg_ff = uibuttongroup(panel,'units','pix',...
@@ -234,6 +234,14 @@ fix_endowments_rd(2) = uicontrol(bg_ff,...
     'position',[yes_no_offsets(2) , radio_bottom , sub_element_width , radio_height],...
     'fontsize',font_size,...
     'string',' Yes');
+
+% help button
+fix_endowments_help_button = uicontrol('Parent',panel, 'style','push', ...
+    'unit','pix', ...
+    'position',[(figure_width-element_width)/2+element_width-50 , current_bottom+10 , 20 , 20], ...
+    'string','?', ...
+    'fontsize',big_font_size, ...
+    'callback',{@fix_endowments_help_button_call}); %#ok<NASGU>
 
 
 
@@ -275,6 +283,21 @@ advanced_settings_button = uicontrol('Parent',more_options_panel, 'style','push'
 uiwait(fh)  % Prevent all other processes from starting until closed.
 
 
+
+
+
+%% for fix endowments help button
+function [] = fix_endowments_help_button_call(varargin)
+    msgbox({'Whether to perform a fixing procedure to make sure that the chosen bundles are exactly on the budget line.', ...
+            'It is crucial, as this program always performs its calculations under this assumption.', ...
+            'In some experimental software there is inaccuracy in the reported quantities of the bundles chosen by the subjects, and as a result, the bundles reported in the file data are slightly above or under the budget line.', ...
+            'The fixing procedure changes both quantities (x1,x2) by multiplying both by the same number (by: 1 / (x1*p1 + x2*p2)).', ...
+            'This fixing procedure ensures that corner bundles will remain this way, that bundles with equal quantities (on the 45 degrees line) will stay this way, and in general, that the ratio between the goods before and after fixing will be the same.', ...
+            'All the explanations above were made for the case of 2 goods for simplicity, but the procedure takes place with any number of goods (by multiplying each quantity by: 1 / (x1*p1 + ... + xn*pn)).', ...
+            '', 'If you wish the procedure not to be used, select the "NO" option.', ...
+            'If you wish to fix the quantities in another manner, do it in the data file itself, and only then read it and use this program on it.', ...
+            '', 'Note that if the deviation from the budget line is of more than 5% (in even one observation in the dataset), the program will refuse to use the data file, as in this case the data file is assumed to contain significant errors.'});
+end
 
 
 
@@ -407,8 +430,8 @@ function [] = ok_button_call(varargin)
         % remove the file from the list
         remove_file_call();
     elseif (~is_valid)
-        % remove the file from the list
-        remove_file_call();
+        % remove the file from the list (on second thought - leave it, but don't allow the user to continue with this file until issues in the file will be solved)    
+        %remove_file_call();
     else
         % check if endowments are (approximately) equal to 1, otherwise print a warning 
         % the endowments (may not equal to 1)
@@ -421,8 +444,8 @@ function [] = ok_button_call(varargin)
         if (num_of_errors)
             % the file does not exist or is not available - we end this run
             msgbox(char(strcat({'There were '}, num2str(num_of_errors), {' cases that the chosen bundle was significantly not on the budget line (the expenditure of the chosen bundle is more than '}, num2str(1+HPZ_Constants.fix_endowments_error), {' or less than '}, num2str(1/(1+HPZ_Constants.fix_endowments_error)), {' times the budget constraint). Please fix your data such that all observations will be (at least approximately) on the budget line.'})));
-            % remove the file from the list
-            remove_file_call();
+            % remove the file from the list (on second thought - leave it, but don't allow the user to continue with this file until issues in the file will be solved)   
+            %remove_file_call();
         else
             % fixing the bundles so their endowments will be equal exactly to 1.
             % this fix is needed because of rounding that makes the endowment a little
