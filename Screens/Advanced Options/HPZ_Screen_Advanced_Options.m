@@ -736,7 +736,7 @@ varian_algorihm_settings_explanation_label = uicontrol('Parent',panel, ...
     'backgroundc',get(fh,'color'),...
     'fontsize',font_size,...
     'HorizontalAlignment','left',...
-    'string','Explanation: The algorithm that we use to calculate Varian, translate the Varian problem with n observations, to a Houtman-Maks problem with weights with a bigger number of observations, n(n-1) at most.The best simple indicator for the difficulty of the calculation is the number of observations in the new weighted Houtman-Maks problem, therefore if this number is too big, we use a relaxation of the problem that reduces the number of observations, thus getting an approximation (Lower Bound and Upper Bound). The more we reduce the number of observations, the less accurate the approximation (Upper Bound / Lower Bound will get bigger).'); %#ok<NASGU>
+    'string','Explanation: The algorithm that we use to calculate Varian, translates the Varian problem with n observations, to a Houtman-Maks problem with weights with a bigger number of observations, n(n-1) at most. The best simple indicator for the difficulty of the calculation is the number of observations in the new weighted Houtman-Maks problem, therefore if this number is too big, we use a relaxation of the problem that reduces the number of observations, thus getting an approximation (Lower Bound and Upper Bound). The more we reduce the number of observations, the less accurate the approximation (Upper Bound / Lower Bound will get bigger).'); %#ok<NASGU>
 
 % --- maximal number of new num of obs --- 
 % current height of element
@@ -1255,17 +1255,21 @@ end
 function [] = reset_button_call(varargin)
     % Callback for Reset button.
 
+    % read default values
     [bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Default_Values();
+    
+    % reset bootstrap settings
     set(sample_size_analytic_input,'string',num2str(bootstrap_sample_sizes(1)));
     set(sample_size_numeric_input,'string',num2str(bootstrap_sample_sizes(2)));
     set(sample_size_semi_numeric_input,'string',num2str(bootstrap_sample_sizes(3)));
     set(significance_level_input,'string',num2str(bootstrap_significance_level));
-    
+    % reset BI threshold
     set(BI_threshold_input,'string',num2str(BI_threshold));
-    
+    set(BI_threshold_warning,'Visible',enable{1});
+    % reset residuals files settings
     set(one_residuals_file_rd(1),'value', (one_residuals_file ~= 0)*1);
     set(one_residuals_file_rd(2),'value', (one_residuals_file == 0)*1);
-
+    % reset waitbar settings
     set(single_waitbar_input,'string',num2str(waitbar_settings(1)));
     set(residuals_consistency_waitbar_rd(1),'value', (waitbar_settings(2) ~= 0)*1);
     set(residuals_consistency_waitbar_rd(2),'value', (waitbar_settings(2) == 0)*1);
@@ -1273,27 +1277,17 @@ function [] = reset_button_call(varargin)
     set(residuals_estimation_waitbar_rd(2),'value', (waitbar_settings(3) == 0)*1);
     set(bootstrap_waitbar_rd(1),'value', (waitbar_settings(4) ~= 0)*1);
     set(bootstrap_waitbar_rd(2),'value', (waitbar_settings(4) == 0)*1);
-    
+    % reset starting points and convergence points settings
     set(max_starting_points_analytic_input,'string',num2str(max_starting_points(1)));
     set(max_starting_points_numeric_input,'string',num2str(max_starting_points(2)));
     set(max_starting_points_semi_numeric_input,'string',num2str(max_starting_points(3)));
-    
     possible_num_convergence_points_str = possible_num_convergence_points_vector_to_string (possible_num_convergence_points);
-%     possible_num_convergence_points_str = get(possible_num_convergence_points_input,'string');
-%     possible_num_convergence_points_split = strsplit(possible_num_convergence_points_str, ',');
-%     possible_num_convergence_points = [];
-%     for j=1:length(possible_num_convergence_points_split)
-%         current_num = str2num(possible_num_convergence_points_split{j});
-%         if ~isempty(current_num) && current_num >= 1
-%             possible_num_convergence_points = [possible_num_convergence_points , current_num]; %#ok<AGROW>
-%         end
-%     end
-%     possible_num_convergence_points = unique(possible_num_convergence_points);
     set(possible_num_convergence_points_input,'string',possible_num_convergence_points_str);
-
+    % reset varian settings
     set(varian_max_num_of_obs_input,'string',num2str(Varian_algorithm_settings(1)));
     set(varian_min_multiplier_input,'string',num2str(Varian_algorithm_settings(2)));
-    
+    set(varian_min_multiplier_warning,'Visible',enable{1});
+    % reset debugger mode settings
     set(debugger_mode_rd(1),'value', (debugger_mode ~= 0)*1);
     set(debugger_mode_rd(2),'value', (debugger_mode == 0)*1);
 end
