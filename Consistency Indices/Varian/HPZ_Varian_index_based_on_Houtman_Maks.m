@@ -1,4 +1,4 @@
-function [VARIAN, Var_approx_ratio, Var_in_sample_residuals, one_minus_v] = HPZ_Varian_index_based_on_Houtman_Maks (expenditure, identical_choice, index_threshold, Varian_algorithm_settings)
+function [VARIAN, Var_approx_ratio, Var_in_sample_residuals, one_minus_v, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Varian_index_based_on_Houtman_Maks (expenditure, identical_choice, index_threshold, Varian_algorithm_settings, aggregators, out_of_sample_required)
 
 % NOTE! We assume all the observations passed to this function are involved
 % in cycles. If you will pass an observation that is not involved in any
@@ -74,44 +74,9 @@ limit_obs_num = max(limit_obs_num , old_obs_num_multiplier * limit_obs_num_multi
 % comparison to the complexity of calculating the Varian index
 [~, ~, ~, ~, SDRP] = GARP_based_on_expenditures(expenditure, identical_choice, index_threshold);
 
-% % for debugging:
-% [obs_num_print, ~] = size(expenditure)
-% SDRP_count = sum(sum(SDRP))
-
-% % REDUNDANT:
-% % we are only interested in SDRP relations that are involved in any cycles
-% [~, SDRP] = find_relevant_relations(SDRP, SDRP);
-
-
-
-% % "value" of each observation;
-% % observations with more incoming and outcoming edges are more likely to be
-% % involved in minimal cycles, so we use them first when we look for minimal cycles  
-% obs_values = zeros(1, old_obs_num);
-% for i=1:old_obs_num
-%     obs_values(i) = sum(SDRP(i,:)) * sum(SDRP(:,i));
-% end
-% [~,order] = sort(obs_values, 'descend');
-% % sort the matrices
-% SDRP = SDRP(order , order);
-% expenditure = expenditure(order , order);
-% % we will use this to go back to the original order
-% back_order = sort(order);
-
 
 
 % now we transform the Varian problem to a weighted Houtman-Maks problem
-
-
-
-% num of observations in the original problem
-%[old_obs_num, ~] = size(SDRP);
-
-% num of observations in the equivalent weighted-Houtman-Maks problem
-% observation i needs to be split to k observations, when k is the sum of
-% the i'th row, therefore summing each row then summing over all rows,
-% gives the total number of observations in the new problem
-%new_obs_num = sum(sum(SDRP));
 
 % The matrix RATIO has at the cell in the i'th row and the j'th column, the ratio between 
 % the value of the bundle that was chosen in observation j given the prices of observation 
@@ -119,70 +84,11 @@ limit_obs_num = max(limit_obs_num , old_obs_num_multiplier * limit_obs_num_multi
 RATIO = expenditure ./ (diag(expenditure) * ones(old_obs_num,1)');
 one_minus_RATIO = 1 - RATIO;
 
-% initializing the new "SDRP" matrix that will be used in the new problem
-%new_SDRP = zeros(new_obs_num , new_obs_num);
-
-
-
-% THIS CODE WAS USED FOR EXACT CALCULATION. IT WAS REPLACED BY A SIMILAR
-% CODE AHEAD, THE NEW CODE RESORTS TO APPROXIMATION IN DIFFICULT CASES.
-%
-% % this vector will be used to "go" from the old matrix's indices to the 
-% % new matrix's indices 
-% old_to_new_indices = zeros(1, old_obs_num);
-% % this vector will be used to "go back" from the new problem to the old one
-% % (know which old observation is associated with a specific new observation) 
-% new_to_old = zeros(1, new_obs_num);
-% % this counter keeps where we are in "new_DRP", while "old_counter" keeps where we are in "SDRP" 
-% new_counter = 1;
-% for old_counter = 1:old_obs_num   
-%     % find the relations
-%     relations = find(SDRP(old_counter , :));
-%     num_of_relations = length(relations);
-%     % assign to the vectors
-%     old_to_new_indices(old_counter) = new_counter;
-%     new_to_old(new_counter:(new_counter + num_of_relations - 1)) = old_counter;
-%     % update counter
-%     new_counter = new_counter + num_of_relations;
-% end
-% 
-% % initialization of "weights" for the weighted-Houtman-Maks
-% weights = zeros(1, new_obs_num);
-% 
-% % this counter keeps where we are in "new_DRP", while "old_counter" keeps where we are in "SDRP" 
-% new_counter = 0;
-% for old_counter = 1:old_obs_num
-%     
-%     % find the relations and their ratios, and sort the ratios in descending order 
-%     relations = find(SDRP(old_counter , :));
-%     v_weights = one_minus_RATIO(old_counter , relations);
-%     [v_weights , indices_for_sorting] = sort(v_weights, 'descend');
-%     relations = relations(indices_for_sorting);   % we sort the relations as well
-%     num_of_relations = length(relations);
-%     
-%     % assign the new observations to the "new_DRP" matrix (only rows, not columns) 
-%     for i=1:num_of_relations
-%         % the real relation that remains
-%         new_matrix_relation = old_to_new_indices(relations(i));   % we only keep the relation to the first duplicated observation 
-%         new_SDRP(new_counter + i, new_matrix_relation) = 1;
-%         % the made-up relation between duplicated observations
-%         if i ~= num_of_relations
-%             new_SDRP(new_counter + i, new_counter + i + 1) = 1;
-%         end
-%         
-%         % assign weights
-%         weights(new_counter + i) = v_weights(i);
-%     end
-%     
-%     % update new_counter
-%     new_counter = new_counter + num_of_relations;
-% end
-
-
 % new number of observations in the equivalent weighted-HM problem
 % (if it is too big, we will reduce it by some relaxation, thus calculating
 % an approximation instead of exact value)
 new_obs_num = sum(sum(SDRP));
+
 
 approx_iteration = 1;  % counts iterations of the while loop
 while approx_iteration == 1 || (approx_iteration == 2 && new_obs_num > limit_obs_num) || (approx_iteration >= 3 && new_obs_num > target_obs_num)
@@ -245,7 +151,7 @@ approx_term = previous_approx_term;
 % initializing the new "SDRP" matrix that will be used in the new problem,
 % and the vector of observation weights
 new_SDRP = false(new_obs_num , new_obs_num);   % zeros(new_obs_num , new_obs_num);
-weights = zeros(1, new_obs_num);
+weights = nan(1, new_obs_num);
 
 
 new_counter = 0;
@@ -290,54 +196,66 @@ end
 Var_approx_ratio = sqrt(max_ratio);
 
 
-% FLIP Part I: 
-% this is for efficiency of finding minimal cycles algorithm.
-% it is needed because the "find_all_minimal_cycles" function that will be
-% called from "HPZ_Houtman_Maks_Weighted_Cycles_Approach" starts from the
-% last vertex and goes backwords, and if old vertex A was splitted into A1,
-% A2,...,Ak such that A1->A2->...->Ak, we want that A1 will be handled
-% first by the "find_all_minimal_cycles" function, because then when we
-% continue to Ai = {A2,...,Ak} after removing A1, the algorithm will 
-% immediately recognize that there is no path back to Ai, since all paths 
-% leading to Ai go through A1.
-% if you use an implementation of "find_all_minimal_cycles" that starts
-% from the 1st vertex and goes forward, you should delete the "FLIP" Parts
-% I and II to regain efficiency.
-new_SDRP = new_SDRP(new_obs_num:(-1):1 , new_obs_num:(-1):1);
-weights = weights(new_obs_num:(-1):1);
-
+% % FLIP Part I: 
+% % this is for efficiency of finding minimal cycles algorithm.
+% % it is needed because the "find_all_minimal_cycles" function that will be
+% % called from "HPZ_Houtman_Maks_Weighted_Cycles_Approach" starts from the
+% % last vertex and goes backwords, and if old vertex A was splitted into A1,
+% % A2,...,Ak such that A1->A2->...->Ak, we want that A1 will be handled
+% % first by the "find_all_minimal_cycles" function, because then when we
+% % continue to Ai = {A2,...,Ak} after removing A1, the algorithm will 
+% % immediately recognize that there is no path back to Ai, since all paths 
+% % leading to Ai go through A1.
+% % if you use an implementation of "find_all_minimal_cycles" that starts
+% % from the 1st vertex and goes forward, you should delete the "FLIP" Parts
+% % I and II to regain efficiency.
+% new_SDRP = new_SDRP(new_obs_num:(-1):1 , new_obs_num:(-1):1);
+% weights = weights(new_obs_num:(-1):1);
 
 % after transforming the problem, we can calculate the index:
-[VARIAN, ~, one_minus_v_new_obs] = HPZ_Houtman_Maks_Weighted_Cycles_Approach (new_SDRP, weights);
+if ~out_of_sample_required
+    % without out-of-sample
+    [~, ~, one_minus_v_new_obs, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Weighted_Houtman_Maks (new_SDRP, weights, aggregators);
+else
+    % with out-of-sample, we pass old_to_new_indices as varargin{1}
+   [~, ~, one_minus_v_new_obs, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Weighted_Houtman_Maks (new_SDRP, weights, aggregators, old_to_new_indices); 
+end
 
-
-% FLIP Part II:
-% RE-FLIP: turn everything back to the right order
-one_minus_v_new_obs = one_minus_v_new_obs(new_obs_num:(-1):1, :);
+% % FLIP Part II:
+% % RE-FLIP: turn everything back to the right order
+% one_minus_v_new_obs = one_minus_v_new_obs(new_obs_num:(-1):1, :);
 
 
 % transform 1-v to the original observations
-one_minus_v = zeros(old_obs_num, 3);
+one_minus_v = nan(old_obs_num, 3);
 for i=1:new_obs_num
     one_minus_v(new_to_old(i), :) = max(one_minus_v(new_to_old(i), :), one_minus_v_new_obs(i, :));
 end
 
 
-% calculate in-sample residuals
-max_var_residuals = HPZ_Consistency_Indices_In_Sample_Difference_Residuals_Calc (one_minus_v(:,1), @max); 
-average_var_residuals = HPZ_Consistency_Indices_In_Sample_Difference_Residuals_Calc (one_minus_v(:,2), @mean);
-meanssq_var_residuals = HPZ_Consistency_Indices_In_Sample_Difference_Residuals_Calc (one_minus_v(:,3), @(x) sqrt(meansqr(x)));
 
-% % go back to the original order
-% max_var_residuals = max_var_residuals(back_order);
-% average_var_residuals = average_var_residuals(back_order);
-% meanssq_var_residuals = meanssq_var_residuals(back_order);
+% calculating the Varian Index for this subset
+% this part is not necessary, as it is done again in HPZ_Varian_Manager for the full set of observations  
+VARIAN = nan(1,3);
+VARIAN(1) = sum(one_minus_v(:,1)) / old_obs_num;            % Mean
+VARIAN(2) = sqrt(sum(one_minus_v(:,2).^2) / old_obs_num);   % AVG(SSQ)
+VARIAN(3) = max(one_minus_v(:,3));                          % Max
 
-% summarize all residuals
-Var_in_sample_residuals = [one_minus_v(:,1) , one_minus_v(:,2) , one_minus_v(:,3) , max_var_residuals , average_var_residuals , meanssq_var_residuals];
+
+
+% calculating in-sample residuals for this subset
+% this part is not necessary, as it is done again in HPZ_Varian_Manager for the full set of observations  
+
+% calculate in-sample difference residuals
+average_var_residuals = HPZ_Consistency_Indices_In_Sample_Difference_Residuals_Calc (one_minus_v(:,1), @mean);
+meanssq_var_residuals = HPZ_Consistency_Indices_In_Sample_Difference_Residuals_Calc (one_minus_v(:,2), @(x) sqrt(meansqr(x)));
+max_var_residuals = HPZ_Consistency_Indices_In_Sample_Difference_Residuals_Calc (one_minus_v(:,3), @max); 
+
+% summarize all residuals;
+% the first 3 are in-sample component residuals, 
+% and the second 3 are in-sample difference residuals.
+Var_in_sample_residuals = [one_minus_v(:,1) , one_minus_v(:,2) , one_minus_v(:,3) , average_var_residuals , meanssq_var_residuals , max_var_residuals];
+
 
 
 end
-
-
-
