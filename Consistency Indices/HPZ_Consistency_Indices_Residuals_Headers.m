@@ -16,14 +16,14 @@ num_of_columns = 2;
 if (GARP_flags(1) == 1)
     if (GARP_flags(2) == 1)
         % 1 column to print the original full value, for comparison
-        num_of_columns = num_of_columns + sum(GARP_flags(5:7));
+        num_of_columns = num_of_columns + GARP_flags(5) + 2*GARP_flags(6) + GARP_flags(7);
         if (GARP_flags(3) == 1)
             % 2 columns for in-sample : (1) residual value (2) residual % 
-            num_of_columns = num_of_columns + 2 * sum(GARP_flags(5:7));
+            num_of_columns = num_of_columns + 2*(GARP_flags(5) + 2*GARP_flags(6) + GARP_flags(7));
         end
         if (GARP_flags(4) == 1)
             % 2 columns for out-of-sample : (1) residaul value (2) residual difference % 
-            num_of_columns = num_of_columns + 2 * sum(GARP_flags(5:7));
+            num_of_columns = num_of_columns + 2*(GARP_flags(5) + 2*GARP_flags(6) + GARP_flags(7));
         end
     end
 end
@@ -40,10 +40,10 @@ end
 if (VARIAN_flags(1) == 1)
     if (VARIAN_flags(2) == 1)
         if (VARIAN_flags(3) == 1)
-            num_of_columns = num_of_columns + 18; % = 3*4 + 3*2  = (exact, lower, approximate, upper) * (3 aggreagtes) * (Component)  +  (exact, approximate) * (3 aggreagtes) * (Difference) 
+            num_of_columns = num_of_columns + sum(VARIAN_flags(5:7))*6; % = aggregates*(4+2)  = (num aggreagtes) * [(exact, lower, approximate, upper)*(Component) + (exact, approximate)*(Difference)]   
         end
         if (VARIAN_flags(4) == 1)
-            num_of_columns = num_of_columns + 36; % 4*3*2 + 2*3*2 = (exact, lower, approximate, upper) * (3 aggreagtes) * (full + out-of-sample)   +   (exact, approximate) * (3 aggreagtes) * (residual + normalized-residual)
+            num_of_columns = num_of_columns + sum(VARIAN_flags(5:7))*12; % aggregates*(4*2 + 2*2) = (num aggreagtes) * [(exact, lower, approximate, upper)*(full + out-of-sample) + (exact, approximate)*(residual + normalized-residual)] 
         end
     end
 end
@@ -84,44 +84,58 @@ current_col = 3;
 if (GARP_flags(1) == 1)
     if (GARP_flags(2) == 1)
         if (GARP_flags(5) == 1)
-            col_headers{current_col} = 'WARP VIO-PAIRS full index';
+            col_headers{current_col} = 'WARP VIOLATIONS full index';
             current_col = current_col + 1;
             if (GARP_flags(3) == 1)
-                col_headers{current_col} = 'WARP VIO-PAIRS in-Sample';
-                col_headers{current_col+1} = 'WARP VIO-PAIRS in-Sample (%)';
+                col_headers{current_col} = 'WARP VIOLATIONS in-Sample';
+                col_headers{current_col+1} = 'WARP VIOLATIONS in-Sample (%)';
                 current_col = current_col + 2;
             end
             if (GARP_flags(4) == 1)
-                col_headers{current_col} = 'WARP VIO-PAIRS out-of-Sample index';
-                col_headers{current_col+1} = 'WARP VIO-PAIRS difference (%) full from out-of-Sample';
+                col_headers{current_col} = 'WARP VIOLATIONS out-of-Sample index';
+                col_headers{current_col+1} = 'WARP VIOLATIONS difference (%) full from out-of-Sample';
                 current_col = current_col + 2;
             end
         end
+        
         if (GARP_flags(6) == 1)
-            col_headers{current_col} = 'GARP VIO-PAIRS full index';
+            col_headers{current_col} = 'GARP VIOLATIONS full index';
             current_col = current_col + 1;
             if (GARP_flags(3) == 1)
-                col_headers{current_col} = 'GARP VIO-PAIRS in-Sample';
-                col_headers{current_col+1} = 'GARP VIO-PAIRS in-Sample (%)';
+                col_headers{current_col} = 'GARP VIOLATIONS in-Sample';
+                col_headers{current_col+1} = 'GARP VIOLATIONS in-Sample (%)';
                 current_col = current_col + 2;
             end
             if (GARP_flags(4) == 1)
-                col_headers{current_col} = 'GARP VIO-PAIRS out-of-Sample index';
-                col_headers{current_col+1} = 'GARP VIO-PAIRS difference (%) full from out-of-Sample';
+                col_headers{current_col} = 'GARP VIOLATIONS out-of-Sample index';
+                col_headers{current_col+1} = 'GARP VIOLATIONS difference (%) full from out-of-Sample';
+                current_col = current_col + 2;
+            end
+            col_headers{current_col} = 'GARP PAIRS full index';
+            current_col = current_col + 1;
+            if (GARP_flags(3) == 1)
+                col_headers{current_col} = 'GARP PAIRS in-Sample';
+                col_headers{current_col+1} = 'GARP PAIRS in-Sample (%)';
+                current_col = current_col + 2;
+            end
+            if (GARP_flags(4) == 1)
+                col_headers{current_col} = 'GARP PAIRS out-of-Sample index';
+                col_headers{current_col+1} = 'GARP PAIRS difference (%) full from out-of-Sample';
                 current_col = current_col + 2;
             end
         end
+        
         if (GARP_flags(7) == 1)
-            col_headers{current_col} = 'SARP VIO-PAIRS full index';
+            col_headers{current_col} = 'SARP VIOLATIONS full index';
             current_col = current_col + 1;
             if (GARP_flags(3) == 1)
-                col_headers{current_col} = 'SARP VIO-PAIRS in-Sample';
-                col_headers{current_col+1} = 'SARP VIO-PAIRS in-Sample (%)';
+                col_headers{current_col} = 'SARP VIOLATIONS in-Sample';
+                col_headers{current_col+1} = 'SARP VIOLATIONS in-Sample (%)';
                 current_col = current_col + 2;
             end
             if (GARP_flags(4) == 1)
-                col_headers{current_col} = 'SARP VIO-PAIRS out-of-Sample index';
-                col_headers{current_col+1} = 'SARP VIO-PAIRS difference (%) full from out-of-Sample';
+                col_headers{current_col} = 'SARP VIOLATIONS out-of-Sample index';
+                col_headers{current_col+1} = 'SARP VIOLATIONS difference (%) full from out-of-Sample';
                 current_col = current_col + 2;
             end
         end
@@ -143,66 +157,80 @@ end
 if (VARIAN_flags(1) == 1)
     if (VARIAN_flags(2) == 1)
         if (VARIAN_flags(3) == 1)
-            col_headers{current_col} = 'VARIAN Max in-Sample Component';
-            col_headers{current_col+1} = 'VARIAN Max Lower Bound in-Sample Component';
-            col_headers{current_col+2} = 'VARIAN Max Approximate in-Sample Component';
-            col_headers{current_col+3} = 'VARIAN Max Upper Bound in-Sample Component';
-            col_headers{current_col+4} = 'VARIAN Max in-Sample Difference';
-            col_headers{current_col+5} = 'VARIAN Max Approximate in-Sample Difference';
-            col_headers{current_col+6} = 'VARIAN Mean in-Sample Component';
-            col_headers{current_col+7} = 'VARIAN Mean Lower Bound in-Sample Component';
-            col_headers{current_col+8} = 'VARIAN Mean Approximate in-Sample Component';
-            col_headers{current_col+9} = 'VARIAN Mean Upper Bound in-Sample Component';
-            col_headers{current_col+10} = 'VARIAN Mean in-Sample Difference';
-            col_headers{current_col+11} = 'VARIAN Mean Approximate in-Sample Difference';
-            col_headers{current_col+12} = 'VARIAN AVGSSQ in-Sample Component';
-            col_headers{current_col+13} = 'VARIAN AVGSSQ Lower Bound in-Sample Component';
-            col_headers{current_col+14} = 'VARIAN AVGSSQ Approximate in-Sample Component';
-            col_headers{current_col+15} = 'VARIAN AVGSSQ Upper Bound in-Sample Component';
-            col_headers{current_col+16} = 'VARIAN AVGSSQ in-Sample Difference';
-            col_headers{current_col+17} = 'VARIAN AVGSSQ Approximate in-Sample Difference';
-            current_col = current_col + 18; % = 3*4 + 3*2;
+            if (VARIAN_flags(5) == 1)
+                col_headers{current_col}   = 'VARIAN Mean in-Sample Component';
+                col_headers{current_col+1} = 'VARIAN Mean Lower Bound in-Sample Component';
+                col_headers{current_col+2} = 'VARIAN Mean Approximate in-Sample Component';
+                col_headers{current_col+3} = 'VARIAN Mean Upper Bound in-Sample Component';
+                col_headers{current_col+4} = 'VARIAN Mean in-Sample Difference';
+                col_headers{current_col+5} = 'VARIAN Mean Approximate in-Sample Difference';
+                current_col = current_col + 6;
+            end
+            if (VARIAN_flags(6) == 1)
+                col_headers{current_col}   = 'VARIAN AVGSSQ in-Sample Component';
+                col_headers{current_col+1} = 'VARIAN AVGSSQ Lower Bound in-Sample Component';
+                col_headers{current_col+2} = 'VARIAN AVGSSQ Approximate in-Sample Component';
+                col_headers{current_col+3} = 'VARIAN AVGSSQ Upper Bound in-Sample Component';
+                col_headers{current_col+4} = 'VARIAN AVGSSQ in-Sample Difference';
+                col_headers{current_col+5} = 'VARIAN AVGSSQ Approximate in-Sample Difference';
+                current_col = current_col + 6;
+            end
+            if (VARIAN_flags(7) == 1)
+                col_headers{current_col}   = 'VARIAN Max in-Sample Component';
+                col_headers{current_col+1} = 'VARIAN Max Lower Bound in-Sample Component';
+                col_headers{current_col+2} = 'VARIAN Max Approximate in-Sample Component';
+                col_headers{current_col+3} = 'VARIAN Max Upper Bound in-Sample Component';
+                col_headers{current_col+4} = 'VARIAN Max in-Sample Difference';
+                col_headers{current_col+5} = 'VARIAN Max Approximate in-Sample Difference';
+                current_col = current_col + 6;
+            end
         end
         if (VARIAN_flags(4) == 1)
-            col_headers{current_col} = 'VARIAN Max full index';
-            col_headers{current_col+1} = 'VARIAN Max Lower Bound full index';
-            col_headers{current_col+2} = 'VARIAN Max Approximate full index';
-            col_headers{current_col+3} = 'VARIAN Max Upper Bound full index';
-            col_headers{current_col+4} = 'VARIAN Mean full index';
-            col_headers{current_col+5} = 'VARIAN Mean Lower Bound full index';
-            col_headers{current_col+6} = 'VARIAN Mean Approximate full index';
-            col_headers{current_col+7} = 'VARIAN Mean Upper Bound full index';
-            col_headers{current_col+8} = 'VARIAN AVGSSQ full index';
-            col_headers{current_col+9} = 'VARIAN AVGSSQ Lower Bound full index';
-            col_headers{current_col+10} = 'VARIAN AVGSSQ Approximate full index';
-            col_headers{current_col+11} = 'VARIAN AVGSSQ Upper Bound full index';
-            
-            col_headers{current_col+12} = 'VARIAN Max out-of-Sample index';
-            col_headers{current_col+13} = 'VARIAN Max Lower Bound out-of-Sample index';
-            col_headers{current_col+14} = 'VARIAN Max Approximate out-of-Sample index';
-            col_headers{current_col+15} = 'VARIAN Max Upper Bound out-of-Sample index';
-            col_headers{current_col+16} = 'VARIAN Mean out-of-Sample index';
-            col_headers{current_col+17} = 'VARIAN Mean Lower Bound out-of-Sample index';
-            col_headers{current_col+18} = 'VARIAN Mean Approximate out-of-Sample index';
-            col_headers{current_col+19} = 'VARIAN Mean Upper Bound out-of-Sample index';
-            col_headers{current_col+20} = 'VARIAN AVGSSQ out-of-Sample index';
-            col_headers{current_col+21} = 'VARIAN AVGSSQ Lower Bound out-of-Sample index';
-            col_headers{current_col+22} = 'VARIAN AVGSSQ Approximate out-of-Sample index';
-            col_headers{current_col+23} = 'VARIAN AVGSSQ Upper Bound out-of-Sample index';
-            
-            col_headers{current_col+24} = 'VARIAN Max difference full from out-of-Sample';
-            col_headers{current_col+25} = 'VARIAN Max normalized difference full from out-of-Sample';
-            col_headers{current_col+26} = 'VARIAN Max Approximate difference full from out-of-Sample';
-            col_headers{current_col+27} = 'VARIAN Max Approximate normalized difference full from out-of-Sample';
-            col_headers{current_col+28} = 'VARIAN Mean difference full from out-of-Sample';
-            col_headers{current_col+29} = 'VARIAN Mean normalized difference full from out-of-Sample';
-            col_headers{current_col+30} = 'VARIAN Mean Approximate difference full from out-of-Sample';
-            col_headers{current_col+31} = 'VARIAN Mean Approximate normalized difference full from out-of-Sample';
-            col_headers{current_col+32} = 'VARIAN AVGSSQ difference full from out-of-Sample';
-            col_headers{current_col+33} = 'VARIAN AVGSSQ normalized difference full from out-of-Sample';
-            col_headers{current_col+34} = 'VARIAN AVGSSQ Approximate difference full from out-of-Sample';
-            col_headers{current_col+35} = 'VARIAN AVGSSQ Approximate normalized difference full from out-of-Sample';
-            current_col = current_col + 36; % = 4*3*2 + 2*3*2
+            if (VARIAN_flags(5) == 1) % Mean Aggregator
+                col_headers{current_col}    = 'VARIAN Mean full index';
+                col_headers{current_col+1}  = 'VARIAN Mean Lower Bound full index';
+                col_headers{current_col+2}  = 'VARIAN Mean Approximate full index';
+                col_headers{current_col+3}  = 'VARIAN Mean Upper Bound full index';
+                col_headers{current_col+4}  = 'VARIAN Mean out-of-Sample index';
+                col_headers{current_col+5}  = 'VARIAN Mean Lower Bound out-of-Sample index';
+                col_headers{current_col+6}  = 'VARIAN Mean Approximate out-of-Sample index';
+                col_headers{current_col+7}  = 'VARIAN Mean Upper Bound out-of-Sample index';
+                col_headers{current_col+8}  = 'VARIAN Mean difference full from out-of-Sample';
+                col_headers{current_col+9}  = 'VARIAN Mean normalized difference full from out-of-Sample';
+                col_headers{current_col+10} = 'VARIAN Mean Approximate difference full from out-of-Sample';
+                col_headers{current_col+11} = 'VARIAN Mean Approximate normalized difference full from out-of-Sample';
+                current_col = current_col + 12;
+            end
+            if (VARIAN_flags(6) == 1) % AVG(SSQ) Aggregator
+                col_headers{current_col}    = 'VARIAN AVGSSQ full index';
+                col_headers{current_col+1}  = 'VARIAN AVGSSQ Lower Bound full index';
+                col_headers{current_col+2}  = 'VARIAN AVGSSQ Approximate full index';
+                col_headers{current_col+3}  = 'VARIAN AVGSSQ Upper Bound full index';
+                col_headers{current_col+4}  = 'VARIAN AVGSSQ out-of-Sample index';
+                col_headers{current_col+5}  = 'VARIAN AVGSSQ Lower Bound out-of-Sample index';
+                col_headers{current_col+6}  = 'VARIAN AVGSSQ Approximate out-of-Sample index';
+                col_headers{current_col+7}  = 'VARIAN AVGSSQ Upper Bound out-of-Sample index';
+                col_headers{current_col+8}  = 'VARIAN AVGSSQ difference full from out-of-Sample';
+                col_headers{current_col+9}  = 'VARIAN AVGSSQ normalized difference full from out-of-Sample';
+                col_headers{current_col+10} = 'VARIAN AVGSSQ Approximate difference full from out-of-Sample';
+                col_headers{current_col+11} = 'VARIAN AVGSSQ Approximate normalized difference full from out-of-Sample';
+                current_col = current_col + 12;
+            end
+            if (VARIAN_flags(7) == 1) % Maximum Aggregator 
+                col_headers{current_col}    = 'VARIAN Max full index';
+                col_headers{current_col+1}  = 'VARIAN Max Lower Bound full index';
+                col_headers{current_col+2}  = 'VARIAN Max Approximate full index';
+                col_headers{current_col+3}  = 'VARIAN Max Upper Bound full index';
+                col_headers{current_col+4}  = 'VARIAN Max out-of-Sample index';
+                col_headers{current_col+5}  = 'VARIAN Max Lower Bound out-of-Sample index';
+                col_headers{current_col+6}  = 'VARIAN Max Approximate out-of-Sample index';
+                col_headers{current_col+7}  = 'VARIAN Max Upper Bound out-of-Sample index';
+                col_headers{current_col+8}  = 'VARIAN Max difference full from out-of-Sample';
+                col_headers{current_col+9}  = 'VARIAN Max normalized difference full from out-of-Sample';
+                col_headers{current_col+10} = 'VARIAN Max Approximate difference full from out-of-Sample';
+                col_headers{current_col+11} = 'VARIAN Max Approximate normalized difference full from out-of-Sample';
+                current_col = current_col + 12;
+            end
         end
     end
 end

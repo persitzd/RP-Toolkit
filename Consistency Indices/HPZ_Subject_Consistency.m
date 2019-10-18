@@ -139,7 +139,7 @@ identical_choice = zeros(obs_num, obs_num);
 for j=1:obs_num
     % going through all identical_choice’s cells.
     for k=1:obs_num
-        %if the choices j&k are identical, then set value of cell (j,k) = 1 , otherwise 0. 
+        % if the choices j&k are identical, then set value of cell (j,k) = 1 , otherwise 0. 
         if all( abs(Choices(j, 1:num_of_goods) - Choices(k, 1:num_of_goods)) <= Choices(j, 1:num_of_goods)*identical_choices_threshold )
         % if all( (abs(Choices(j,:) - Choices(k,:)) <= Choices(j,:)*identical_choices_threshold) )   %EXTENSION 
             identical_choice(j,k) = 1;
@@ -152,8 +152,9 @@ end
 
 
 %  create graph/s of revealed preference relations, and save it (if the user specified so) 
-HPZ_draw_RP_graphs (Graph_flags, main_folder_for_results, data_matrix(1,1), expenditure, identical_choice, index_threshold);
-
+if any(Graph_flags(1:4))
+    HPZ_draw_RP_graphs (Graph_flags, main_folder_for_results, data_matrix(1,1), expenditure, identical_choice, index_threshold, Choices(:, 1:num_of_goods));
+end
 
 
 
@@ -163,18 +164,22 @@ HPZ_draw_RP_graphs (Graph_flags, main_folder_for_results, data_matrix(1,1), expe
 
 % calculating WARP GARP and SARP violations, and assigning the results to the results vectors 
 [FLAGS, VIO_PAIRS, VIOLATIONS, WARP, SARP] = HPZ_WARP_GARP_SARP(identical_choice, DRP, RP, GARP);
-WARP_VIO_PAIRS = VIO_PAIRS(1);
+WARP_VIO_PAIRS = VIO_PAIRS(1); %#ok<NASGU>
 GARP_VIO_PAIRS = VIO_PAIRS(2);
-SARP_VIO_PAIRS = VIO_PAIRS(3);
+SARP_VIO_PAIRS = VIO_PAIRS(3); %#ok<NASGU>
+WARP_VIOLATIONS = VIOLATIONS(1);
+GARP_VIOLATIONS = VIOLATIONS(2);
+SARP_VIOLATIONS = VIOLATIONS(3);
 GARP_FLAG = FLAGS(2);
 
 
 %% residuals for WARP/GARP/SARP VIO PAIRS
 
 % the full number of GARP VIO PAIRS violations
-WARP_full = WARP_VIO_PAIRS;
-GARP_full = GARP_VIO_PAIRS;
-SARP_full = SARP_VIO_PAIRS;
+WARP_full = WARP_VIOLATIONS; %WARP_VIO_PAIRS;
+GARP_full = GARP_VIOLATIONS; %GARP_VIO_PAIRS;
+GARP_full_pairs = GARP_VIO_PAIRS;
+SARP_full = SARP_VIOLATIONS; %SARP_VIO_PAIRS;
 
 Mat_GARP = [];
 if (sum(residuals_flags .* out_sample_flags) > 0)
@@ -188,7 +193,7 @@ if (sum(residuals_flags .* out_sample_flags) > 0)
     % this matrix is a helper matrix for WARP/GARP/SARP out-of-sample residuals. 
     % we perform the calculations now and temporarily store them in
     % this matrix, and later assign them to the main matrix.
-    Mat_GARP = zeros (obs_num, 6);
+    Mat_GARP = zeros (obs_num, 8);
 
     % calculation of out-of-sample residuals
     for i=1:obs_num
@@ -196,25 +201,28 @@ if (sum(residuals_flags .* out_sample_flags) > 0)
         truncated_DRP = DRP([1:(i-1) , (i+1):end] , [1:(i-1) , (i+1):end]);
         truncated_SDRP = SDRP([1:(i-1) , (i+1):end] , [1:(i-1) , (i+1):end]);
         [truncated_GARP, truncated_RP, ~] = GARP_based_on_DRP_and_SDRP(truncated_DRP, truncated_SDRP);
-        [~, VIO_PAIRS_temp, VIOLATIONS_temp, ~, ~] = HPZ_WARP_GARP_SARP(truncated_identical_choice, truncated_DRP, truncated_RP, truncated_GARP); %#ok<ASGLU>
-        WARP_partial = VIO_PAIRS_temp(1);
-        GARP_partial = VIO_PAIRS_temp(2);
-        SARP_partial = VIO_PAIRS_temp(3);   
+        [~, VIO_PAIRS_temp, VIOLATIONS_temp, ~, ~] = HPZ_WARP_GARP_SARP(truncated_identical_choice, truncated_DRP, truncated_RP, truncated_GARP);
+        WARP_partial = VIOLATIONS_temp(1); %VIO_PAIRS_temp(1);
+        GARP_partial = VIOLATIONS_temp(2); %VIO_PAIRS_temp(2);
+        GARP_partial_pairs = VIO_PAIRS_temp(2);
+        SARP_partial = VIOLATIONS_temp(3); %VIO_PAIRS_temp(3);   
         % WARP
         Mat_GARP(i, 1) = WARP_partial;                              % partial index
         Mat_GARP(i, 2) = (WARP_full - WARP_partial) / WARP_full;    % difference in %
         % GARP
         Mat_GARP(i, 3) = GARP_partial;                              % partial index
         Mat_GARP(i, 4) = (GARP_full - GARP_partial) / GARP_full;    % difference in %
+        Mat_GARP(i, 5) = GARP_partial_pairs;                                            % partial index
+        Mat_GARP(i, 6) = (GARP_full_pairs - GARP_partial_pairs) / GARP_full_pairs;      % difference in %
         % SARP
-        Mat_GARP(i, 5) = SARP_partial;                              % partial index
-        Mat_GARP(i, 6) = (SARP_full - SARP_partial) / SARP_full;    % difference in %
+        Mat_GARP(i, 7) = SARP_partial;                              % partial index
+        Mat_GARP(i, 8) = (SARP_full - SARP_partial) / SARP_full;    % difference in %
     end
 end
 
 % calculate WARP, GARP and SARP residuals, and assign them to the residuals matrix (and update col_counter)  
 if (residuals_flags(1) == 1)
-    WARP_GARP_SARP_Mat = HPZ_WARP_GARP_SARP_residuals(GARP_flags, VIO_PAIRS, WARP, GARP, SARP, Mat_GARP);
+    WARP_GARP_SARP_Mat = HPZ_WARP_GARP_SARP_residuals(GARP_flags, VIO_PAIRS, VIOLATIONS, WARP, GARP, SARP, Mat_GARP);
 end
 
 
@@ -230,10 +238,18 @@ end
 %% inconsistency indices
 
 % initializations of inconsistency indices results variables
-AFRIAT = 0;
-VARIAN_Bounds = [0,0,0,0,0,0,0,0,0];
-HoutmanMaks = 0;
-MPI = [0,0];
+AFRIAT = nan;
+VARIAN_Bounds = [nan, nan, nan, nan, nan, nan, nan, nan, nan];
+HoutmanMaks = nan;
+MPI = [nan, nan];
+
+if GARP_FLAG == 0
+    % then all the indices are 0 as well
+    AFRIAT = 0;
+    VARIAN_Bounds = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    HoutmanMaks = 0;
+    MPI = [0, 0]; 
+end
 
 % If the data doesn't satisfies GARP, then the program calculates the violation 
 % extent according to AFRIAT, Varian and Houtman-Maks indices (which of these
@@ -251,7 +267,7 @@ if GARP_FLAG == 1
             GARP_vector = [];
         end
         % we pass "residuals_waitbar" only when there are a lot of observations, since Afriat is fast enough so normally there is no need in a residuals waitbar  
-        residuals_waitbar_AFRIAT = residuals_waitbar & obs_num >= 100;
+        residuals_waitbar_AFRIAT = false; %residuals_waitbar & obs_num >= 100;
         [AFRIAT, Afriat_Mat] = HPZ_Afriat_Manager (AFRIAT_flags, expenditure, index_threshold, SDRP, residuals_waitbar_AFRIAT, current_run, total_runs, data_matrix(1,1), GARP_vector);
     end
     
@@ -269,7 +285,7 @@ if GARP_FLAG == 1
     if VARIAN_flags(1)
         % if VARIAN was chosen
         % (otherwise we don't want to aimlessly waste time in unneeded calculations)
-        [VARIAN_Bounds, ~, ~, ~, Varian_Mat] = HPZ_Varian_Manager (VARIAN_flags, expenditure, identical_choice, index_threshold, SDRP, Varian_algorithm_settings, residuals_waitbar, current_run, total_runs, data_matrix(1,1));
+        [VARIAN_Bounds, ~, ~, ~, Varian_Mat] = HPZ_Varian_Manager (VARIAN_flags, expenditure, identical_choice, index_threshold, SDRP, Varian_algorithm_settings);   % , residuals_waitbar, current_run, total_runs, data_matrix(1,1)
     end
     
     
@@ -286,7 +302,7 @@ if GARP_FLAG == 1
     if HOUTMAN_flags(1)
         % if HOUTMAN-MAKS was chosen
         % (otherwise we don't want to aimlessly waste time in unneeded calculations)
-        [HoutmanMaks, ~, ~, ~, HM_Mat] = HPZ_Houtman_Maks_Manager (HOUTMAN_flags, DRP, SDRP, RP, identical_choice, num_of_goods, residuals_waitbar, current_run, total_runs, data_matrix(1,1));
+        [HoutmanMaks, ~, ~, ~, HM_Mat] = HPZ_Houtman_Maks_Manager (HOUTMAN_flags, DRP, SDRP, RP, identical_choice);
     end
     
     
