@@ -60,7 +60,7 @@ properties (Constant)
     %   determine whether the quantities are the same, and the bundles are
     %   identical, a determining that is crucial for WARP and SARP. 
     %   it is needed for numeric reasons.
-    % * basically, it is enough to set this threshold to 1*eps in irder for
+    % * basically, it is enough to set this threshold to 1*eps in order for
     %   the results to be "stable", but just like the previous threshold,
     %   using a bigger threshold doesn't make any difference. we decided 
     %   arbitrarily to have this threshold equal to 10*eps.
@@ -290,6 +290,8 @@ properties (Constant)
     output_format_settings_file_name = 'Output_Format_Settings';   %.csv
     residuals_settings_file_name = 'Residuals_Settings';   %.csv
     advanced_options_settings_file_name = 'Advanced_Options_Settings';   %.csv
+    varian_additive_aggregators_file_name = 'Varian_Additive_Aggregators';   %.csv
+    varian_non_additive_aggregators_file_name = 'Varian_Non_Additive_Aggregators';   %.csv
     
     % String Constants that are used as headers in the data settings file 
     data_name = 'Data_Name';
@@ -314,6 +316,12 @@ properties (Constant)
                             HPZ_Constants.maxquantity2_index,...
                             HPZ_Constants.data_set,...
                             HPZ_Constants.fix_endowments};
+    
+%     % String Constants that are used as headers in the varian additive aggregators file 
+%     Varian_Additive_Aggregators_1 = 'Varian_Additive_Aggregators_1';
+%     Varian_Additive_Aggregators_2 = 'Varian_Additive_Aggregators_2';
+%     varian_additive_aggregators_headers = {HPZ_Constants.Varian_Additive_Aggregators_1,...
+%                                             HPZ_Constants.Varian_Additive_Aggregators_2};
     
     % sub-directory for settings files (without the '/' in the beginning)
     func_forms_settings_files_dir = 'Functional Forms Definitions';
