@@ -1,4 +1,4 @@
-function [Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags] = HPZ_Consistency_Indices_Settings_Read(main_folder)
+function [Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags] = HPZ_Consistency_Indices_Settings_Read(main_folder)
 
 % this function reads the user-interface screens saved settings
 
@@ -14,13 +14,13 @@ try
     [settings] = csvread(strcat(main_folder, '/', HPZ_Constants.settings_files_dir, '/', HPZ_Constants.consistency_indices_settings_file_name, '.csv'));
     
     % in the next line, we call the6th row and 7th column in the settings
-    % matrix, because we have 6 rows and the max number of columns is 7
-    % (it is 7 for GARP flags).
+    % matrix, because we have 7 rows and the max number of columns is 7
+    % (it is 7 for GARP flags and for VARIAN flags).
     % if it doesn't exists, it means that the settings file is corrupted,
     % cause it doesn't have all required data.
-    % if in the future you will add more rows (>6) or use longer rows (num
+    % if in the future you will add more rows (>7) or use longer rows (num
     % of columns > 7), you should increase these numbers respectively.
-    check_settings = settings(6 , 7); %#ok<NASGU>
+    check_settings = settings(7 , 7); %#ok<NASGU>
 catch
     % A) if we failed to read the file,
     % we assume it might be because it was accidently deleted, or because
@@ -33,12 +33,13 @@ catch
 end
 
 % assign initial values to variables in accordance with the settings
-Graph_flags = settings(1, 1:4);
-GARP_flags = settings(2, 1:7);
-AFRIAT_flags = settings(3, 1:4);
-VARIAN_flags = settings(4, 1:4);
-HOUTMAN_flags = settings(5, 1:4);
-MPI_flags = settings(6, 1:4);
+Graph_flags = settings(1, 1:5);
+power_test_settings = settings(2, 1:3);
+GARP_flags = settings(3, 1:7);
+AFRIAT_flags = settings(4, 1:4);
+VARIAN_flags = settings(5, 1:7);
+HOUTMAN_flags = settings(6, 1:4);
+MPI_flags = settings(7, 1:4);
 
 
 
@@ -48,6 +49,13 @@ for i=1:length(Graph_flags)
     if (Graph_flags(i) ~= 0 && Graph_flags(i) ~= 1)
         Graph_flags(i) = 1;
     end
+end
+% only the 1st and 3rd elements are logical/boolean, the 2nd element is the number of simulations
+if (power_test_settings(1) ~= 0 && power_test_settings(1) ~= 1)
+    power_test_settings(1) = 1;   
+end
+if (power_test_settings(3) ~= 0 && power_test_settings(3) ~= 1)
+    power_test_settings(3) = 1;   
 end
 for i=1:length(GARP_flags)
     if (GARP_flags(i) ~= 0 && GARP_flags(i) ~= 1)

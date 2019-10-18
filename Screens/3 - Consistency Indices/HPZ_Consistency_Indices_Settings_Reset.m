@@ -27,22 +27,26 @@ cleanup_close_file = onCleanup(@() fclose(settings_file));
 
 %% printing the default settings, which are:
 % Revealed Preference Graphs (.png) - by default we print none, and printing without edge weights 
-fprintf(settings_file, '%s,%s,%s,%s\n', '0', '0', '0', '0');   % line (1)
+fprintf(settings_file, '%s,%s,%s,%s,%s\n', '0', '0', '0', '0', '0');   % line (1)
+% Power Test - by default don't perform power test, and if perform - with 1000 simulations,   
+% and if it is risk preferences - standard randomization (not given FOXD)  
+fprintf(settings_file, '%s,%s,%s\n', '0', '1000', '0');   % line (2)
 % GARP - perform GARP WARP and SARP, without residuals of any sort,
 % but default residuals is both in-sample and out-of-sample, and for GARP only 
-fprintf(settings_file, '%s,%s,%s,%s,%s,%s,%s\n', '1', '0', '1', '1', '0', '1', '0');   % line (2)
+fprintf(settings_file, '%s,%s,%s,%s,%s,%s,%s\n', '1', '0', '1', '1', '0', '1', '0');   % line (3)
 % AFRIAT - perform AFRIAT, without residuals of any sort,
 % but default residuals is only out-of-sample (in-sample is not optional in fact) 
-fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '0', '1');   % line (3)
+fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '0', '1');   % line (4)
 % VARIAN - perform VARIAN, without residuals of any sort,
-% but default residuals is both in-sample and out-of-sample 
-fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '1', '1');   % line (4)
+% but default residuals is both in-sample and out-of-sample,
+% and by default calculate only mean and AVGSSQ aggregators, and not max aggregator 
+fprintf(settings_file, '%s,%s,%s,%s,%s,%s,%s\n', '1', '0', '1', '1', '1','1','0');   % line (5)
 % HOUTMAN-MAKS - perform HOUTMAN-MAKS, without residuals of any sort,
 % but default residuals is only out-of-sample (in-sample is not optional in fact)
-fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '0', '1');   % line (5)
+fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '0', '1');   % line (6)
 % MPI - perform MPI, without residuals of any sort,
 % but default residuals is only out-of-sample (in-sample is not optional in fact)
-fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '0', '1');   % line (6)
+fprintf(settings_file, '%s,%s,%s,%s\n', '1', '0', '0', '1');   % line (7)
 
 
 
