@@ -10,7 +10,7 @@ function [bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, ma
 
 % read settings from file 
 try
-    % reading from the file
+    % reading settings (except varian aggregators) from the file
     [settings] = csvread(strcat(main_folder, '/', HPZ_Constants.settings_files_dir, '/', HPZ_Constants.advanced_options_settings_file_name, '.csv'));
     
     % in the next line, we call the 9th row and 3rd column in the settings
@@ -20,6 +20,7 @@ try
     % if in the future you will add more rows (>9) or use longer rows (num
     % of columns > 3), you should increase these numbers respectively.
     check_settings = settings(9 , 3); %#ok<NASGU>
+    
 catch
     % A) if we failed to read the file,
     % we assume it might be because it was accidently deleted, or because
@@ -27,8 +28,12 @@ catch
     % B) if the file's data was corrupted, we assume someone might've
     % played with it and made changes to it by mistake.
     % A+B) either way, we reset the file, then read it again.
+    
     HPZ_Advanced_Options_Settings_Reset(main_folder);
+    
+    % reading settings (except varian aggregators) from the file
     [settings] = csvread(strcat(main_folder, '/', HPZ_Constants.settings_files_dir, '/', HPZ_Constants.advanced_options_settings_file_name, '.csv'));
+    
 end
 
 
@@ -46,7 +51,7 @@ Varian_algorithm_settings = settings(9,1:2);
 
 
 
-%% for (almost) every variable, we check if it has a valid value, otherwise we reset it
+% for (almost) every variable, we check if it has a valid value, otherwise we reset it
 
 % bootstrap_sample_sizes
 for i=1:length(bootstrap_sample_sizes)
@@ -116,5 +121,7 @@ if Varian_algorithm_settings(2) < 1
     % it cannot be less than 1; can result an infinite loop in Varian
     Varian_algorithm_settings(2) = 1;
 end
+
+
 
 end

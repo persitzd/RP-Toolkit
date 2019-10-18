@@ -15,6 +15,8 @@ possible_num_convergence_points = [3,4,5,6,7,8,9,10,12,14,16,18,20,25,30];
 one_residuals_file = 1;
 debugger_mode = 0;
 waitbar_settings = [3 , 1 , 0 , 1];
-Varian_algorithm_settings = [1000 , 2];
+Varian_algorithm_settings = [10000 , 2];
+% Varian_Additive_Aggregators_1 = {'z/n', 'sqrt(z/n)'};
+% Varian_Additive_Aggregators_2 = {'x', 'x.^2'};
 
 end
