@@ -54,8 +54,8 @@ function min_cycles_with_path = find_all_minimal_cycles_with_path (G, Path)
         end
         % we prefer to keep Current in the matrix and not delete it,
         % but in order to "block" it, we turn all its rows and columns to 0. 
-        G(Current,:) = 0;
-        G(:,Current) = 0;
+        G(Current,:) = false;   % 0;
+        G(:,Current) = false;   % 0;
     end
     
     
@@ -70,14 +70,14 @@ function min_cycles_with_path = find_all_minimal_cycles_with_path (G, Path)
         %
         % OutCurrentOthers contains all OutCurrent except for the current Next 
         OutCurrentOthers_Indexes = OutCurrent_Indexes;
-        OutCurrentOthers_Indexes(Next) = 0;
+        OutCurrentOthers_Indexes(Next) = false;   % 0;
 
         % 4(d). set Pointers to InG(d')\{r}
         %
         % InNext contains all the vertices that point to Next, 
         % except for Current, that was handled earlier in a different manner  
         InNext_Indexes = G(:,Next)';
-        InNext_Indexes(Current) = 0;
+        InNext_Indexes(Current) = false;   % 0;
 
         % 4(e). set G' to G without the columns and rows corresponding to Others and pointers  
         %

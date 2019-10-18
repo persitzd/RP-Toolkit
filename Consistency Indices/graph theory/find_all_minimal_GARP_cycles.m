@@ -32,6 +32,10 @@ if isempty(DRP) || sum(sum(DRP)) == 0
    return
 end
 
+% logical improves efficiency (in case the input wasn't logical already)
+DRP = logical(DRP);
+SDRP = logical(SDRP);
+
 
 for i = n:(-1):2
     

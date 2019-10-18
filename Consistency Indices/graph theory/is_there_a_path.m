@@ -4,14 +4,14 @@ function is_there_path = is_there_a_path(G, s, d)
 % it return 'true' if there is, 'false' if there isn't.
 % it uses BFS (Breadth First Search) approach.
 
-% improves performance
+% improves performance, and also necessary sometimes to avoid errors (due to the use of logical indexing) 
 G = logical(G);
-
-% making sure there are no edges from a vertex to itself
-[n, ~] = size(G);
-for i=1:n
-    G(i,i) = false;
-end
+% 
+% % making sure there are no edges from a vertex to itself
+% [n, ~] = size(G);
+% for i=1:n
+%     G(i,i) = false;
+% end
 
 while ~G(s,d)
     % s points to these vertices, i.e. there are edges e = (s,v) for each of these vertices 
@@ -24,7 +24,7 @@ while ~G(s,d)
     % we don't want to visit these vertices again, so we remove their incoming edges 
     G(:,s_points_to) = false;
     % we add to s all the incoming edges of these vertices
-    G(s,:) = any(G(s_points_to,:),1);
+    G(s,:) = any(G(s_points_to,:), 1);
 end
 
 % if we got here then G(s,d)==true, then we found a path from s to d

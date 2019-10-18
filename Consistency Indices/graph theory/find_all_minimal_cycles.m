@@ -31,6 +31,11 @@ if isempty(G) || sum(sum(G)) == 0
    return
 end
 
+% logical improves efficiency (in case the input wasn't logical already)
+% sparse seem to not affect running time, but it reduces space complexity 
+G = sparse(logical(G));
+
+
 
 for i = n:(-1):2
     
