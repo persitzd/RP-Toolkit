@@ -44,6 +44,7 @@ data_matrix = cell(1,1);
 subjects_index = cell(1,1);
 action_flag = cell(1,1);
 Graph_flags = cell(1,1);
+power_test_settings = cell(1,1);
 GARP_flags = cell(1,1);
 AFRIAT_flags = cell(1,1); 
 VARIAN_flags = cell(1,1);
@@ -92,7 +93,7 @@ while (another_run)
     % (2) In the last screen, the user is asked whether he desires to make
     %     more runs (with a different data set / method / etc.), or whther
     %     he is finished and the program should start running (another_run==false) 
-    [ok, data_matrix{i}, subjects_index{i}, action_flag{i}, Graph_flags{i}, GARP_flags{i}, AFRIAT_flags{i}, VARIAN_flags{i}, HOUTMAN_flags{i}, MPI_flags{i}, pref_class{i}, function_flag{i}, numeric_flag{i}, param1_restrictions{i}, param2_restrictions{i}, fix_corners{i}, metric_flag{i}, aggregation_flag{i}, max_time_estimation{i}, min_counter{i}, parallel_flag{i}, output_file_config{i}, write_all_flag{i}, bootstrap_flag{i}, file_val_str{i}, residual_flag{i}, in_sample_flag{i}, out_sample_flag{i}, bootstrap_sample_sizes{i}, bootstrap_significance_level{i}, BI_threshold{i}, max_starting_points{i}, one_residuals_file{i}, debugger_mode{i}, waitbar_settings{i}, Varian_algorithm_settings{i}] = HPZ_All_Screens_Manager(main_folder, runs_counter);
+    [ok, data_matrix{i}, subjects_index{i}, action_flag{i}, Graph_flags{i}, power_test_settings{i}, GARP_flags{i}, AFRIAT_flags{i}, VARIAN_flags{i}, HOUTMAN_flags{i}, MPI_flags{i}, pref_class{i}, function_flag{i}, numeric_flag{i}, param1_restrictions{i}, param2_restrictions{i}, fix_corners{i}, metric_flag{i}, aggregation_flag{i}, max_time_estimation{i}, min_counter{i}, parallel_flag{i}, output_file_config{i}, write_all_flag{i}, bootstrap_flag{i}, file_val_str{i}, residual_flag{i}, in_sample_flag{i}, out_sample_flag{i}, bootstrap_sample_sizes{i}, bootstrap_significance_level{i}, BI_threshold{i}, max_starting_points{i}, one_residuals_file{i}, debugger_mode{i}, waitbar_settings{i}, Varian_algorithm_settings{i}] = HPZ_All_Screens_Manager(main_folder, runs_counter);
     % if the user pressed "cancel" in one of the screens, then this run was cancelled 
     if (ok == 0)
         runs_counter = runs_counter - 1;
@@ -124,7 +125,7 @@ for i = 1:runs_counter
         % All calculations and printing to results file occur here
         if action_flag{i} == HPZ_Constants.Consistency_action
             % Consistency Indices
-            HPZ_Consistency_Indices_Manager(data_matrix{i}, subjects_index{i}, Graph_flags{i}, GARP_flags{i}, AFRIAT_flags{i}, VARIAN_flags{i}, HOUTMAN_flags{i}, MPI_flags{i}, max_time_estimation{i}, print_precision{i}, one_residuals_file{i}, waitbar_settings{i}, Varian_algorithm_settings{i}, main_folder_for_results, i, runs_counter);  
+            HPZ_Consistency_Indices_Manager(data_matrix{i}, subjects_index{i}, Graph_flags{i}, power_test_settings{i}, GARP_flags{i}, AFRIAT_flags{i}, VARIAN_flags{i}, HOUTMAN_flags{i}, MPI_flags{i}, max_time_estimation{i}, print_precision{i}, one_residuals_file{i}, waitbar_settings{i}, Varian_algorithm_settings{i}, main_folder_for_results, i, runs_counter);  
 
         elseif (action_flag{i} == HPZ_Constants.NLLS_action) || (action_flag{i} == HPZ_Constants.MMI_action) || (action_flag{i} == HPZ_Constants.BI_action)
             % Parameters Estimation (NLLS / MMI / BI)
@@ -138,15 +139,11 @@ for i = 1:runs_counter
     % tell the user how long the whole run took
     end_time = now;
     running_time = datevec(end_time - start_time);
-    months = running_time(2);
     days = running_time(3);
     hours = running_time(4);
     minutes = running_time(5);
     seconds = running_time(6);
-    if months
-        fprintf('\nRun number %d running time was:\n%d months, %d days, %d hours and %d minutes.\n\n',...
-                                                                        i, months, days, hours, minutes);
-    elseif days
+    if days
         fprintf('\nRun number %d running time was:\n%d days, %d hours, %d minutes and %.0f seconds.\n\n',...
                                                                         i, days, hours, minutes, seconds);
     else
