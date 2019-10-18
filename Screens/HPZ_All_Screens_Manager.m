@@ -200,10 +200,14 @@ end
 %% consistency and inconsistency measures settings
 if action_flag == HPZ_Constants.Consistency_action   % Consistency indices
     
+    % number of observations and calculation of number of goods
+    [~, num_of_columns] = size(data_matrix);
+    num_of_goods = (num_of_columns - 2) / 2;
+    
     % here the user can choose which consistency and inconsistency measures
     % to calculate, and whether to calculate residuals for them, and which
     % method of residuals (in sample or out of sample)
-    [Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, ok] = HPZ_Screen_Consistency_Indices(main_folder, runs_counter, pref_class);  
+    [Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, ok] = HPZ_Screen_Consistency_Indices(main_folder, runs_counter, pref_class, num_of_goods);  
     
     % if the user clicked "cancel", stop the program
     if (ok == 0)
