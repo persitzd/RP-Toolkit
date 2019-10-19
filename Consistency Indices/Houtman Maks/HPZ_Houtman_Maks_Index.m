@@ -51,8 +51,20 @@ end
 % avoid displaying algorithm stages in command window
 intlinprog_options = optimoptions('intlinprog', 'Display','off');
 
+% intlinprog function was changed between R2017a and R2017b,
+% hence we need to address that. we don't bother addressing version before 2014a, 
+% since intlinprog wasn't even introduced before then (there was bintprog instead).  
+is_old_version_intlinprog = all(version('-release') == '2017a') || ...
+                all(version('-release') == '2016b') || all(version('-release') == '2016a') || ...
+                all(version('-release') == '2015b') || all(version('-release') == '2015a') || ...
+                all(version('-release') == '2014b') || all(version('-release') == '2014a');
+
 % find the raw HM Index (minimum number of observations that need to be dropped) 
-[x, fval, exitflag, ~] = intlinprog(f, intcon, A,b, [],[], lb,ub, [], intlinprog_options);
+if is_old_version_intlinprog
+    [x, fval, exitflag, ~] = intlinprog(f, intcon, A,b, [],[], lb,ub, intlinprog_options);
+else
+    [x, fval, exitflag, ~] = intlinprog(f, intcon, A,b, [],[], lb,ub, [], intlinprog_options);
+end
 
 if exitflag == 1
     % assigning to the matrices
