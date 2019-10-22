@@ -1,4 +1,4 @@
-function [VARIAN, Var_approx_ratio, Var_in_sample_residuals, one_minus_v, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Varian_index_based_on_Houtman_Maks (expenditure, identical_choice, index_threshold, Varian_algorithm_settings, aggregators, out_of_sample_required)
+function [VARIAN, Var_approx_ratio, Var_in_sample_residuals, one_minus_v, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Varian_index_based_on_Houtman_Maks (expenditure, identical_choice, index_threshold, Varian_algorithm_settings, aggregators, out_of_sample_required, main_folder_for_results)
 
 % NOTE! We assume all the observations passed to this function are involved
 % in cycles. If you will pass an observation that is not involved in any
@@ -215,10 +215,10 @@ Var_approx_ratio = sqrt(max_ratio);
 % after transforming the problem, we can calculate the index:
 if ~out_of_sample_required
     % without out-of-sample
-    [~, ~, one_minus_v_new_obs, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Weighted_Houtman_Maks (new_SDRP, weights, aggregators);
+    [~, ~, one_minus_v_new_obs, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Weighted_Houtman_Maks (new_SDRP, weights, aggregators, main_folder_for_results);
 else
     % with out-of-sample, we pass old_to_new_indices as varargin{1}
-   [~, ~, one_minus_v_new_obs, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Weighted_Houtman_Maks (new_SDRP, weights, aggregators, old_to_new_indices); 
+   [~, ~, one_minus_v_new_obs, Var_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Weighted_Houtman_Maks (new_SDRP, weights, aggregators, main_folder_for_results, old_to_new_indices); 
 end
 
 % % FLIP Part II:

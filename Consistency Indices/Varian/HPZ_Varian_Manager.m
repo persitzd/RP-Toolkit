@@ -1,4 +1,4 @@
-function [Varian_Bounds, Var_in_sample_component_residuals, Var_out_of_sample_residuals, one_minus_v, Varian_Mat] = HPZ_Varian_Manager (VARIAN_flags, expenditure, identical_choice, index_threshold, SDRP, Varian_algorithm_settings)   % , residuals_waitbar, current_run, total_runs, subject_ID
+function [Varian_Bounds, Var_in_sample_component_residuals, Var_out_of_sample_residuals, one_minus_v, Varian_Mat] = HPZ_Varian_Manager (VARIAN_flags, expenditure, identical_choice, index_threshold, SDRP, Varian_algorithm_settings, main_folder_for_results)   % , residuals_waitbar, current_run, total_runs, subject_ID
 
 
 
@@ -40,7 +40,7 @@ for i=1:num_of_subsets
         subset_identical_choice = identical_choice(current_subset , current_subset);
         
         % calculate the Varian index for this subset of choices
-        [~, subset_Varian_approx_ratio, ~, subset_one_minus_v, ~, subset_out_of_sample_one_minus_v] = HPZ_Varian_index_based_on_Houtman_Maks (subset_expenditure, subset_identical_choice, index_threshold, Varian_algorithm_settings, VARIAN_flags(5:7), out_of_sample_required);
+        [~, subset_Varian_approx_ratio, ~, subset_one_minus_v, ~, subset_out_of_sample_one_minus_v] = HPZ_Varian_index_based_on_Houtman_Maks (subset_expenditure, subset_identical_choice, index_threshold, Varian_algorithm_settings, VARIAN_flags(5:7), out_of_sample_required, main_folder_for_results);
         
         % update lower bound, approximate/exact and upper bound of 1-v
         one_minus_v_avg(current_subset, 1:3)     = [subset_one_minus_v(:,1)/subset_Varian_approx_ratio , subset_one_minus_v(:,1) , subset_one_minus_v(:,1)*subset_Varian_approx_ratio];

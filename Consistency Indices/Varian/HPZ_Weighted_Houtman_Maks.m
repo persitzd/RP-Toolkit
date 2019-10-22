@@ -1,4 +1,4 @@
-function [w_HM, w_HM_raw, w_HM_weight_per_observation, Varian_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Weighted_Houtman_Maks (SDRP, weights, aggregators, varargin)
+function [w_HM, w_HM_raw, w_HM_weight_per_observation, Varian_out_of_sample_residuals, out_of_sample_one_minus_v] = HPZ_Weighted_Houtman_Maks (SDRP, weights, aggregators, main_folder_for_results, varargin)
 
 
 % This function implements the same algorithm that is implemented in 
@@ -117,11 +117,19 @@ end
 
 if aggregators(1)   % mean aggregator
     
-    % calculate weighted houtman-maks for sum aggregator
-    if is_old_version_intlinprog
-        [x, fval, exitflag, ~] = intlinprog(f, intcon, A,b, [],[], lb,ub, intlinprog_options);
-    else
-        [x, fval, exitflag, ~] = intlinprog(f, intcon, A,b, [],[], lb,ub, [], intlinprog_options);
+    try
+        % calculate weighted houtman-maks for sum aggregator
+        if is_old_version_intlinprog
+            [x, fval, exitflag, ~] = intlinprog(f, intcon, A,b, [],[], lb,ub, intlinprog_options);
+        else
+            [x, fval, exitflag, ~] = intlinprog(f, intcon, A,b, [],[], lb,ub, [], intlinprog_options);
+        end
+    catch error_var
+        % if there was an internal error in intlinprog, we would like to
+        % know what caused it, so...
+        HPZ_Print_Intlinprog_Internal_Error_Details(main_folder_for_results, f, intcon, A,b, [],[], lb,ub);
+        % and we make sure it still crashes magnificently
+        rethrow(error_var);
     end
 
     if exitflag == 1
@@ -139,11 +147,19 @@ end
 
 if aggregators(2)   % mean(SSQ) aggregator
     
-    % calculate weighted houtman-maks for sum-of-squares aggregator (by using f^2 instead of f)  
-    if is_old_version_intlinprog
-        [x, fval, exitflag, ~] = intlinprog(f.^2, intcon, A,b, [],[], lb,ub, intlinprog_options);
-    else
-        [x, fval, exitflag, ~] = intlinprog(f.^2, intcon, A,b, [],[], lb,ub, [], intlinprog_options);
+    try
+        % calculate weighted houtman-maks for sum-of-squares aggregator (by using f^2 instead of f)  
+        if is_old_version_intlinprog
+            [x, fval, exitflag, ~] = intlinprog(f.^2, intcon, A,b, [],[], lb,ub, intlinprog_options);
+        else
+            [x, fval, exitflag, ~] = intlinprog(f.^2, intcon, A,b, [],[], lb,ub, [], intlinprog_options);
+        end
+    catch error_var
+        % if there was an internal error in intlinprog, we would like to
+        % know what caused it, so...
+        HPZ_Print_Intlinprog_Internal_Error_Details(main_folder_for_results, f.^2, intcon, A,b, [],[], lb,ub);
+        % and we make sure it still crashes magnificently
+        rethrow(error_var);
     end
 
     if exitflag == 1
