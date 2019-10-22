@@ -285,7 +285,7 @@ if GARP_FLAG == 1
     if VARIAN_flags(1)
         % if VARIAN was chosen
         % (otherwise we don't want to aimlessly waste time in unneeded calculations)
-        [VARIAN_Bounds, ~, ~, ~, Varian_Mat] = HPZ_Varian_Manager (VARIAN_flags, expenditure, identical_choice, index_threshold, SDRP, Varian_algorithm_settings);   % , residuals_waitbar, current_run, total_runs, data_matrix(1,1)
+        [VARIAN_Bounds, ~, ~, ~, Varian_Mat] = HPZ_Varian_Manager (VARIAN_flags, expenditure, identical_choice, index_threshold, SDRP, Varian_algorithm_settings, main_folder_for_results);   % , residuals_waitbar, current_run, total_runs, data_matrix(1,1)
     end
     
     
