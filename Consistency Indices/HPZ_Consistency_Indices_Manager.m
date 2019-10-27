@@ -492,7 +492,7 @@ for i=1:chosen_subjects_num
 %             MPI_stats(:,2) = mean(MPI_list , 2);
 %             MPI_stats(:,3) = std(MPI_list , [] , 2);
             % we also check the number of simulations in which the randomized data was consistent with GARP   
-            num_of_GARP_consistent_simulations = sum(~VIO_PAIRS_stats(:,2));
+            num_of_GARP_consistent_simulations = sum(~VIO_PAIRS_list(2,:));
             
             
             % print the results of the power test to the file
