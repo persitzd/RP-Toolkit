@@ -41,20 +41,29 @@ for i=1:num_of_iterations
     
     if GARP_v_ERRORS == 0
         
-        %if the data satisfies GARP_v, then it narrows the range to 
-        %[AFRIAT, AFRIAT_UPPER], so in the next iteration, in case it's not the 
-        %last one, the algorithm will try to look for a smaller parallel shifting 
-        %(which means a bigger AFRIAT where the data satisfy GARP_v).    
-
+        % if the data satisfies GARP_v, then it narrows the range to 
+        % [AFRIAT, AFRIAT_UPPER], so in the next iteration, in case it's not the 
+        % last one, the algorithm will try to look for a smaller parallel shifting 
+        % (which means a bigger AFRIAT where the data satisfy GARP_v).    
+        
         AFRIAT_LOWER = AFRIAT;
         
     else
         
-        %if the data doesn't satisfy GARP_v, then it narrows the range to 
-        %[AFRIAT_LOWER, AFRIAT] because if the data doesn’t satisfy GARP_v, 
-        %it won't satisfy GARP_u for every u>v
-
+        % if the data doesn't satisfy GARP_v, then it narrows the range to 
+        % [AFRIAT_LOWER, AFRIAT] because if the data doesn’t satisfy GARP_v, 
+        % it won't satisfy GARP_u for every u>v
+        
         AFRIAT_UPPER = AFRIAT;
+        
+        % improving efficiency (added 20.04.2020):
+        % now when we go to lower v values (AFRIAT values),
+        % any observation that wasn't involved in any violation of GARPv,
+        % will not be involved in GARPv for lower values of v,
+        % hence we can discard this observation.
+        GARP_per_obs = sum(GARP_v,1) + sum(GARP_v,2)';
+        obs_involved_in_GARP_violations = (GARP_per_obs > 0);
+        expenditure = expenditure(obs_involved_in_GARP_violations , obs_involved_in_GARP_violations);
         
     end 
 

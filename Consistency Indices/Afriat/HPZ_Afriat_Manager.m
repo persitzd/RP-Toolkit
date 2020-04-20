@@ -1,7 +1,7 @@
-function [AFRIAT, Afriat_Mat] = HPZ_Afriat_Manager (AFRIAT_flags, expenditure, index_threshold, SDRP, residuals_waitbar, current_run, total_runs, subject_ID, varargin)
+function [AFRIAT_Index, Afriat_Mat] = HPZ_Afriat_Manager (AFRIAT_flags, expenditure, index_threshold, SDRP, residuals_waitbar, current_run, total_runs, subject_ID, varargin)
 
 % initialization to avoid errors, just in case
-AFRIAT = NaN; %#ok<NASGU>
+AFRIAT_Index = NaN; %#ok<NASGU>
 Afriat_Mat = [];
 
 
@@ -18,7 +18,7 @@ Afriat_Mat = [];
 [subsets_of_observations, num_of_subsets] = HPZ_Indices_Problem_Distribute(transitive_SDRP, transitive_SDRP);
 
 % initialization
-AFRIAT_per_subset = nan(1, num_of_subsets);
+AFRIAT_Index_per_subset = nan(1, num_of_subsets);
 
 for i=1:num_of_subsets
 
@@ -27,7 +27,7 @@ for i=1:num_of_subsets
     if length(current_subset) == 1
         
         % insert to the vector of Afriat per subset
-        AFRIAT_per_subset(i) = 0;
+        AFRIAT_Index_per_subset(i) = 0;
         
     else   % length(current_subset) > 1
 
@@ -35,19 +35,15 @@ for i=1:num_of_subsets
         subset_expenditure = expenditure(current_subset , current_subset);
 
         % calculate Afriat index
-        AFRIAT_subset = HPZ_Afriat_efficiency_index (subset_expenditure, index_threshold);
+        AFRIAT_Index_subset = HPZ_Afriat_efficiency_index (subset_expenditure, index_threshold);
 
         % insert to the vector of Afriat per subset
-        AFRIAT_per_subset(i) = AFRIAT_subset;
+        AFRIAT_Index_per_subset(i) = AFRIAT_Index_subset;
     end
 
 end
 
-AFRIAT = max(AFRIAT_per_subset);
-% we add "eps", since we assume that if we got to Varian calculation, then
-% the subject does not satisfy GARP, and we want that in this case the
-% Varian won't be 0, but will be a very very low positive number
-AFRIAT = AFRIAT + eps;
+AFRIAT_Index = max(AFRIAT_Index_per_subset);
 
 
 % AFRIAT residuals
@@ -82,18 +78,27 @@ if AFRIAT_flags(2)
         for i=1:num_of_subsets
 
             current_subset = subsets_of_observations{i};
-
-            if length(current_subset) == 1
+            
+            % The "AFRIAT_Index_per_subset(i) < AFRIAT_Index" part was added in 20.04.2020;
+            % it saves a lot of unrequired computations, since it the biggest Afriat violation   
+            % is not in this subset, 
+            if length(current_subset) == 1 || AFRIAT_Index_per_subset(i) < AFRIAT_Index
                 
-                Afriat_Mat(current_subset(1), col_counter) = AFRIAT;               % full index
-                Afriat_Mat(current_subset(1), col_counter + 1) = AFRIAT;           % partial index
-                Afriat_Mat(current_subset(1), col_counter + 2) = AFRIAT - AFRIAT;  % difference = 0
+                % Before 20.04.2020:
+                %Afriat_Mat(current_subset(1), col_counter) = AFRIAT_Index;               % full index
+                %Afriat_Mat(current_subset(1), col_counter + 1) = AFRIAT_Index;           % partial index
+                %Afriat_Mat(current_subset(1), col_counter + 2) = AFRIAT_Index - AFRIAT_Index;  % difference = 0
+                
+                % After 20.04.2020:
+                Afriat_Mat(current_subset, col_counter) = AFRIAT_Index;               % full index
+                Afriat_Mat(current_subset, col_counter + 1) = AFRIAT_Index;           % partial index
+                Afriat_Mat(current_subset, col_counter + 2) = AFRIAT_Index - AFRIAT_Index;  % difference = 0
                 
                 % updating the waitbar
                 if (residuals_waitbar)
                     new_bar_val = new_bar_val + 1/obs_num;
                     waitbar(new_bar_val, h_wb, {waitbar_msg , char(strcat({'Completed '}, num2str(new_bar_val*obs_num), {' observations out of '}, num2str(obs_num)))});
-                end
+                end          
                 
             else   % length(current_subset) > 1
 
@@ -102,7 +107,7 @@ if AFRIAT_flags(2)
                 subset_GARP_vector = GARP_vector(current_subset);
                 
                 % Afriat of the rest of the observations without this subset  
-                AFRIAT_other_subsets = max(AFRIAT_per_subset([1:(i-1),(i+1):end]));
+                AFRIAT_other_subsets = max(AFRIAT_Index_per_subset([1:(i-1),(i+1):end]));
                 
                 % we calculate for each observation its residual
                 for j=1:length(current_subset)
@@ -120,9 +125,13 @@ if AFRIAT_flags(2)
                         % Varian won't be 0, but will be a very very low positive number
                         AFRIAT_partial_full = AFRIAT_partial_full + eps;
                     end
-                    Afriat_Mat(current_subset(j), col_counter) = AFRIAT;                            % full index
+                    Afriat_Mat(current_subset(j), col_counter) = AFRIAT_Index;                            % full index
                     Afriat_Mat(current_subset(j), col_counter + 1) = AFRIAT_partial_full;           % partial index
-                    Afriat_Mat(current_subset(j), col_counter + 2) = AFRIAT - AFRIAT_partial_full;  % difference
+                    Difference = AFRIAT_Index - AFRIAT_partial_full;
+                    if abs(Difference) < 10^(-15)
+                        Difference = 0;
+                    end
+                    Afriat_Mat(current_subset(j), col_counter + 2) = Difference;  % difference
                 
                     % updating the waitbar
                     if (residuals_waitbar)
@@ -145,6 +154,15 @@ if AFRIAT_flags(2)
     end
 
 end
+
+
+
+% WAS MOVED HERE IN 20.04.2020 - it cannot be where it was before, since then residuals calculation will be ruined.   
+% we add "eps", since we assume that if we got to Varian calculation, then
+% the subject does not satisfy GARP, and we want that in this case the
+% Varian won't be 0, but will be a very very low positive number.
+AFRIAT_Index = AFRIAT_Index + eps;
+
 
 
 end
