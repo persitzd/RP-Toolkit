@@ -1,4 +1,4 @@
-function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, max_time_estimation, print_precision, one_residuals_file, waitbar_settings, Varian_algorithm_settings, main_folder_for_results, current_run, total_runs) %#ok<INUSL>
+function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, choice_set_type, Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, max_time_estimation, print_precision, one_residuals_file, waitbar_settings, Varian_algorithm_settings, main_folder_for_results, current_run, total_runs) %#ok<INUSL>
 
 % this function is the container for the whole inconsistency indices module - 
 % all inconsistency indices procedures (consistency check, printing results to
@@ -113,10 +113,10 @@ Graph_flags(end+1) = str2num(generate_random_str); %#ok<ST2NM>
 fprintf(file_handle, '%s,', 'Subject');
 fprintf(file_handle, '%s,', 'Num of Observations');
 if (GARP_flags(1) == 1)
-    fprintf(file_handle, '%s,%s,%s,%s,%s,%s,', ...
+    fprintf(file_handle, '%s,%s,%s,%s,%s,', ...
         'WARP Violations', ...
         'GARP Violations', 'GARP Pairs', ...
-        'SARP Violations');
+        'SARP Violations', 'SARP Pairs');
 end
 if (AFRIAT_flags(1) == 1)
     fprintf(file_handle, '%s,', 'AFRIAT Index');
@@ -149,11 +149,12 @@ if perform_power_test_flag
     fprintf(file_handle, '%s,%s,', ...
         'Number of Simulations', 'Number of Simulations Satisfying GARP');
     if (GARP_flags(1) == 1)
-        fprintf(file_handle, '%s,%s,%s, %s,%s,%s, %s,%s,%s, %s,%s,%s,', ...
+        fprintf(file_handle, '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,', ...
             'WARP Violations - simulation median', 'WARP Violations - simulation mean', 'WARP Violations - simulation std', ...
             'GARP Violations - simulation median', 'GARP Violations - simulation mean', 'GARP Violations - simulation std', ...
             'GARP Pairs - simulation median', 'GARP Pairs - simulation mean', 'GARP Pairs - simulation std', ...
-            'SARP Violations - simulation median', 'SARP Violations - simulation mean', 'SARP Violations - simulation std');
+            'SARP Violations - simulation median', 'SARP Violations - simulation mean', 'SARP Violations - simulation std', ...
+            'SARP Pairs - simulation median', 'SARP Pairs - simulation mean', 'SARP Pairs - simulation std');
     end
     if (AFRIAT_flags(1) == 1)
         fprintf(file_handle, '%s,%s,%s,', ...
@@ -254,8 +255,8 @@ for i=1:chosen_subjects_num
     % the function can return the disaggregated matrices of violations, we
     % don't report it.
     [~,~,~,~,~,~,~,~,~, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN_Bounds, HoutmanMaks, MPI, Mat] = ...
-                            HPZ_Subject_Consistency (data, Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, Mat_num_of_columns, Varian_algorithm_settings, main_folder_for_results, active_waitbar, residuals_waitbar, current_run, total_runs);
-
+                            HPZ_Subject_Consistency (data, choice_set_type, Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, Mat_num_of_columns, Varian_algorithm_settings, main_folder_for_results, active_waitbar, residuals_waitbar, current_run, total_runs);
+    
 %     end_time = now;
 %     running_time = datevec(end_time - start_time);
 %     months = running_time(2);
@@ -273,11 +274,12 @@ for i=1:chosen_subjects_num
     fprintf(file_handle, '%s,', num2str(data(1,1)));
     fprintf(file_handle, '%s,', num2str(obs_num));
     if (GARP_flags(1) == 1)
-        fprintf(file_handle, '%s,%s,%s,%s,', ...
+        fprintf(file_handle, '%s,%s,%s,%s,%s,', ...
             num2str(VIOLATIONS(1), precision_string), ...
             num2str(VIOLATIONS(2), precision_string), ...
             num2str(VIO_PAIRS(2), precision_string), ....
-            num2str(VIOLATIONS(3), precision_string));
+            num2str(VIOLATIONS(3), precision_string), ...
+            num2str(VIO_PAIRS(3), precision_string));
     end
     if (AFRIAT_flags(1) == 1)
         fprintf(file_handle, '%s,', num2str(AFRIAT, precision_string));
@@ -400,12 +402,17 @@ for i=1:chosen_subjects_num
         % number of observations and calculation of number of goods -
         % we currently only allow power test for the case of 2 goods
         [obs_num, num_of_columns] = size(data);
-        num_of_goods = (num_of_columns - 2) / 2;
+        if choice_set_type == HPZ_Constants.choice_set_budget_line
+            num_of_goods = (num_of_columns - 2) / 2;
+        elseif choice_set_type == HPZ_Constants.choice_set_finite_set
+            num_of_goods = 2;   % only 2 good is implemented currently
+        end
+        
         if num_of_goods == 2
         
             base_data_for_power_test = data;
             base_data_for_power_test(:, 3:4) = nan;   % remove the observed choices
-            max_quantities = 1 ./ data(:, 5:6);
+            max_quantities = 1 ./ data(:, 5:6);   
             safe_bundles = 1 ./ sum(data(:, 5:6), 2);   % safe bundles (only in risk)
             
             num_of_simulations = power_test_settings(2);
@@ -421,14 +428,14 @@ for i=1:chosen_subjects_num
             
             for simulation = 1:num_of_simulations
                 
-                if bundle_randomization_type == 0
+                if (choice_set_type == HPZ_Constants.choice_set_budget_line) && bundle_randomization_type == 0
                     % create a data with same budget lines with uniformly random choices   
                     data_for_power_test = base_data_for_power_test;
                     random_uniform_numbers = rand(obs_num, 1);
                     random_uniform_choice_bundle_1 = max_quantities(:,1) .* random_uniform_numbers;
                     random_uniform_choice_bundle_2 = max_quantities(:,2) .* (1-random_uniform_numbers);
                     data_for_power_test(:, 3:4) = [random_uniform_choice_bundle_1 , random_uniform_choice_bundle_2];
-                elseif bundle_randomization_type == 1
+                elseif (choice_set_type == HPZ_Constants.choice_set_budget_line) && bundle_randomization_type == 1
                     % create a data with same budget lines, with choices randomly 
                     % chosen from points on the budget line that adhere to FOSD-satisfying preferences,
                     % i.e. the more expensive good will never have bigger chosen quantity 
@@ -447,18 +454,64 @@ for i=1:chosen_subjects_num
                         end
                         data_for_power_test(obs, 3:4) = [single_random_uniform_choice_1 , single_random_uniform_choice_2];
                     end
+                elseif (choice_set_type == HPZ_Constants.choice_set_finite_set) && bundle_randomization_type == 0
+                    % randomize over the finite number of choices
+                    % create a data with same finite set of options with (discretely) uniformly random choices   
+                    data_for_power_test = base_data_for_power_test;
+                    random_uniform_numbers = rand(obs_num, 1);
+                    for obs = 1:obs_num
+                        num_of_options = 1/2 * sum(~isnan(data_for_power_test(obs,5:end)));   % number of options the consumer could choose from in this observation
+                        random_choice_index = ceil(num_of_options * random_uniform_numbers(obs));
+                        random_choice_bundle = data_for_power_test(obs, 4+(random_choice_index-1)*2+(1:2));
+                        data_for_power_test(obs, 3:4) = random_choice_bundle;
+                    end
+                elseif (choice_set_type == HPZ_Constants.choice_set_finite_set) && bundle_randomization_type == 1
+                    % randomize over the finite number of choices,
+                    % but only those that are not dominated FOSD by others. 
+                    % we're assuming that both goods are equivalent (each reresents a 50% chance lottery).   
+                    % create a data with same finite set of options with (discretely) uniformly random choices   
+                    data_for_power_test = base_data_for_power_test;
+                    random_uniform_numbers = rand(obs_num, 1);
+                    for obs = 1:obs_num
+                        % first, we need to remove those dominated FOSD
+                        choices_raw_with_nan = data_for_power_test(obs,5:end);
+                        choices_raw = choices_raw_with_nan(~isnan(choices_raw_with_nan));
+                        choices_raw_mat = [choices_raw(1:2:(end-1))', choices_raw(2:2:end)'];
+                        max_chocies = max(choices_raw_mat, [], 2);
+                        min_chocies = min(choices_raw_mat, [], 2);
+                        [~, sort_by_max_indexes] = sort(max_chocies, 'descend');
+                        choices_raw_ordered = [max_chocies(sort_by_max_indexes), min_chocies(sort_by_max_indexes)];
+                        choices_to_drop = false(1,length(max_chocies)); % initialization
+                        for opt_choice1 = 1:(length(max_chocies)-1)
+                            for opt_choice2 = (opt_choice1+1):length(max_chocies)
+                                if all(choices_raw_ordered(opt_choice1,:) >= choices_raw_ordered(opt_choice2,:)) && ...
+                                   any(choices_raw_ordered(opt_choice1,:) > choices_raw_ordered(opt_choice2,:))
+                                    % then opt_choice2 is dominated FOSD
+                                    choices_to_drop(opt_choice2) = true;
+                                end
+                            end
+                        end
+                        choices_to_drop_mat = [choices_to_drop ; choices_to_drop];
+                        indexes_choices_to_drop = choices_to_drop_mat(:)';
+                        non_dominated_choices = choices_raw(~indexes_choices_to_drop);
+                        % now, we are finally ready
+                        num_of_options = 1/2 * length(non_dominated_choices);   % number of non-dominated options the consumer could choose from in this observation
+                        random_choice_index = ceil(num_of_options * random_uniform_numbers(obs));
+                        random_choice_bundle = non_dominated_choices((random_choice_index-1)*2+(1:2));
+                        data_for_power_test(obs, 3:4) = random_choice_bundle;
+                    end
                 end
                 
-                [~,~,~,~,~,~,~,~,~, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN_Bounds, HoutmanMaks, MPI, ~] = ...
-                                HPZ_Subject_Consistency (data_for_power_test, Graph_flags_for_power_test, GARP_flags_for_power_test, AFRIAT_flags_for_power_test, VARIAN_flags_for_power_test, HOUTMAN_flags_for_power_test, MPI_flags_for_power_test, 0, Varian_algorithm_settings, '', false, false, 0, 0);
+                [~,~,~,~,~,~,~,~,~, VIO_PAIRS_simul, VIOLATIONS_simul, AFRIAT_simul, VARIAN_Bounds_simul, HoutmanMaks_simul, MPI_simul, ~] = ...
+                                HPZ_Subject_Consistency (data_for_power_test, choice_set_type, Graph_flags_for_power_test, GARP_flags_for_power_test, AFRIAT_flags_for_power_test, VARIAN_flags_for_power_test, HOUTMAN_flags_for_power_test, MPI_flags_for_power_test, 0, Varian_algorithm_settings, '', false, false, 0, 0);
                 
                 % assigning the results to the simulations list
-                VIO_PAIRS_list(:,simulation) = VIO_PAIRS;
-                VIOLATIONS_list(:,simulation) = VIOLATIONS;
-                AFRIAT_list(:,simulation) = AFRIAT;
-                VARIAN_Bounds_list(:,simulation) = VARIAN_Bounds;
-                HoutmanMaks_list(:,simulation) = HoutmanMaks;
-                MPI_list(:,simulation) = MPI;
+                VIO_PAIRS_list(:,simulation) = VIO_PAIRS_simul;
+                VIOLATIONS_list(:,simulation) = VIOLATIONS_simul;
+                AFRIAT_list(:,simulation) = AFRIAT_simul;
+                VARIAN_Bounds_list(:,simulation) = VARIAN_Bounds_simul;
+                HoutmanMaks_list(:,simulation) = HoutmanMaks_simul;
+                MPI_list(:,simulation) = MPI_simul;
                 
             end
             
@@ -500,7 +553,7 @@ for i=1:chosen_subjects_num
                 num2str(num_of_simulations, precision_string), ...
                 num2str(num_of_GARP_consistent_simulations, precision_string));
             if (GARP_flags(1) == 1)
-                fprintf(file_handle, '%s,%s,%s, %s,%s,%s, %s,%s,%s, %s,%s,%s,', ...
+                fprintf(file_handle, '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,', ...
                     num2str(VIOLATIONS_stats(1, 1), precision_string), ...
                     num2str(VIOLATIONS_stats(1, 2), precision_string), ...
                     num2str(VIOLATIONS_stats(1, 3), precision_string), ...
@@ -512,7 +565,10 @@ for i=1:chosen_subjects_num
                     num2str(VIO_PAIRS_stats(2, 3), precision_string), ...
                     num2str(VIOLATIONS_stats(3, 1), precision_string), ...
                     num2str(VIOLATIONS_stats(3, 2), precision_string), ...
-                    num2str(VIOLATIONS_stats(3, 3), precision_string));
+                    num2str(VIOLATIONS_stats(3, 3), precision_string), ...
+                    num2str(VIO_PAIRS_stats(3, 1), precision_string), ...
+                    num2str(VIO_PAIRS_stats(3, 2), precision_string), ...
+                    num2str(VIO_PAIRS_stats(3, 3), precision_string));
             end
             if (AFRIAT_flags(1) == 1)
                 fprintf(file_handle, '%s,%s,%s,', ...

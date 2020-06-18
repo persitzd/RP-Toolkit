@@ -16,14 +16,14 @@ num_of_columns = 2;
 if (GARP_flags(1) == 1)
     if (GARP_flags(2) == 1)
         % 1 column to print the original full value, for comparison
-        num_of_columns = num_of_columns + GARP_flags(5) + 2*GARP_flags(6) + GARP_flags(7);
+        num_of_columns = num_of_columns + GARP_flags(5) + 2*GARP_flags(6) + 2*GARP_flags(7);
         if (GARP_flags(3) == 1)
             % 2 columns for in-sample : (1) residual value (2) residual % 
-            num_of_columns = num_of_columns + 2*(GARP_flags(5) + 2*GARP_flags(6) + GARP_flags(7));
+            num_of_columns = num_of_columns + 2*(GARP_flags(5) + 2*GARP_flags(6) + 2*GARP_flags(7));
         end
         if (GARP_flags(4) == 1)
             % 2 columns for out-of-sample : (1) residaul value (2) residual difference % 
-            num_of_columns = num_of_columns + 2*(GARP_flags(5) + 2*GARP_flags(6) + GARP_flags(7));
+            num_of_columns = num_of_columns + 2*(GARP_flags(5) + 2*GARP_flags(6) + 2*GARP_flags(7));
         end
     end
 end
@@ -111,6 +111,7 @@ if (GARP_flags(1) == 1)
                 col_headers{current_col+1} = 'GARP VIOLATIONS difference (%) full from out-of-Sample';
                 current_col = current_col + 2;
             end
+            %
             col_headers{current_col} = 'GARP PAIRS full index';
             current_col = current_col + 1;
             if (GARP_flags(3) == 1)
@@ -136,6 +137,19 @@ if (GARP_flags(1) == 1)
             if (GARP_flags(4) == 1)
                 col_headers{current_col} = 'SARP VIOLATIONS out-of-Sample index';
                 col_headers{current_col+1} = 'SARP VIOLATIONS difference (%) full from out-of-Sample';
+                current_col = current_col + 2;
+            end
+            %
+            col_headers{current_col} = 'SARP PAIRS full index';
+            current_col = current_col + 1;
+            if (GARP_flags(3) == 1)
+                col_headers{current_col} = 'SARP PAIRS in-Sample';
+                col_headers{current_col+1} = 'SARP PAIRS in-Sample (%)';
+                current_col = current_col + 2;
+            end
+            if (GARP_flags(4) == 1)
+                col_headers{current_col} = 'SARP PAIRS out-of-Sample index';
+                col_headers{current_col+1} = 'SARP PAIRS difference (%) full from out-of-Sample';
                 current_col = current_col + 2;
             end
         end

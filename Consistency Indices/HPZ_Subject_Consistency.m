@@ -1,4 +1,4 @@
-function [expenditure, DRP, SDRP, RP, SRP, WARP, GARP, SARP, FLAGS, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN_Bounds, HoutmanMaks, MPI, Mat] = HPZ_Subject_Consistency (data_matrix, Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, Mat_num_of_columns, Varian_algorithm_settings, main_folder_for_results, active_waitbar, residuals_waitbar, current_run, total_runs)
+function [expenditure, DRP, SDRP, RP, SRP, WARP, GARP, SARP, FLAGS, VIO_PAIRS, VIOLATIONS, AFRIAT, VARIAN_Bounds, HoutmanMaks, MPI, Mat] = HPZ_Subject_Consistency (data_matrix, choice_set_type, Graph_flags, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, Mat_num_of_columns, Varian_algorithm_settings, main_folder_for_results, active_waitbar, residuals_waitbar, current_run, total_runs)
 
 % this function calculates all the currently implemented consistency and
 % inconsistency indices, and their residuals (and depending on the flags 
@@ -34,10 +34,13 @@ function [expenditure, DRP, SDRP, RP, SRP, WARP, GARP, SARP, FLAGS, VIO_PAIRS, V
 
 
 
-
 % number of observations and calculation of number of goods
 [obs_num, num_of_columns] = size(data_matrix);
-num_of_goods = (num_of_columns - 2) / 2;
+if choice_set_type == HPZ_Constants.choice_set_budget_line
+    num_of_goods = (num_of_columns - 2) / 2;
+elseif choice_set_type == HPZ_Constants.choice_set_finite_set
+    num_of_goods = 2;   % only 2 good is implemented currently
+end
 
 
 
@@ -129,7 +132,30 @@ Choices = data_matrix(1:obs_num, 3:end);   % quantities & prices   %EXTENSION
 % column, the value of the bundle that was chosen in observation j given the
 % prices of observation i
 %expenditure = (Choices(:,1)*Choices(:,3)' + Choices(:,2)*Choices(:,4)')';
-expenditure = (Choices(:, 1:num_of_goods) * Choices(:, (num_of_goods+1):end)')';  %EXTENSION 
+if choice_set_type == HPZ_Constants.choice_set_budget_line
+    % choice from budget line
+    expenditure = (Choices(:, 1:num_of_goods) * Choices(:, (num_of_goods+1):end)')';  %EXTENSION 
+elseif choice_set_type == HPZ_Constants.choice_set_finite_set
+    % choice from a finite set of options
+    actual_choices = Choices(:,1:2);
+    optional_choices = Choices(:,3:end);
+    % initialization
+    expenditure = nan(obs_num, obs_num);
+    for obs_i = 1:obs_num
+        for obs_j = 1:obs_num
+            % we want to know how much expenditure was needed to purchase
+            % the bundle in observation obs_j (or a bundle bigger than it), 
+            % given the optional bundles in observation i.
+            bundle_to_get = actual_choices(obs_j,:);
+            optional_bundles = optional_choices(obs_i,:);
+            optional_bundles(isnan(optional_bundles)) = []; % remove nan values
+            ratios_good_1 = bundle_to_get(1,1) ./ optional_bundles(1, 1:2:(end-1));
+            ratios_good_2 = bundle_to_get(1,2) ./ optional_bundles(1, 2:2:end);
+            ratios = max([ratios_good_1 ; ratios_good_2], [], 1);
+            expenditure(obs_i, obs_j) = min(ratios);
+        end
+    end
+end
 
 % the purpose of the matrix identical_choice is to locate identical choices. Value of 
 % cell (j,k) is 1 if choices identical, and 0 otherwise. The following loop builds the 
@@ -180,6 +206,7 @@ WARP_full = WARP_VIOLATIONS; %WARP_VIO_PAIRS;
 GARP_full = GARP_VIOLATIONS; %GARP_VIO_PAIRS;
 GARP_full_pairs = GARP_VIO_PAIRS;
 SARP_full = SARP_VIOLATIONS; %SARP_VIO_PAIRS;
+SARP_full_pairs = SARP_VIO_PAIRS;
 
 Mat_GARP = [];
 if (sum(residuals_flags .* out_sample_flags) > 0)
@@ -193,7 +220,7 @@ if (sum(residuals_flags .* out_sample_flags) > 0)
     % this matrix is a helper matrix for WARP/GARP/SARP out-of-sample residuals. 
     % we perform the calculations now and temporarily store them in
     % this matrix, and later assign them to the main matrix.
-    Mat_GARP = zeros (obs_num, 8);
+    Mat_GARP = zeros (obs_num, 10);
 
     % calculation of out-of-sample residuals
     for i=1:obs_num
@@ -205,7 +232,8 @@ if (sum(residuals_flags .* out_sample_flags) > 0)
         WARP_partial = VIOLATIONS_temp(1); %VIO_PAIRS_temp(1);
         GARP_partial = VIOLATIONS_temp(2); %VIO_PAIRS_temp(2);
         GARP_partial_pairs = VIO_PAIRS_temp(2);
-        SARP_partial = VIOLATIONS_temp(3); %VIO_PAIRS_temp(3);   
+        SARP_partial = VIOLATIONS_temp(3); %VIO_PAIRS_temp(3);
+        SARP_partial_pairs = VIO_PAIRS_temp(3);
         % WARP
         Mat_GARP(i, 1) = WARP_partial;                              % partial index
         Mat_GARP(i, 2) = (WARP_full - WARP_partial) / WARP_full;    % difference in %
@@ -217,6 +245,8 @@ if (sum(residuals_flags .* out_sample_flags) > 0)
         % SARP
         Mat_GARP(i, 7) = SARP_partial;                              % partial index
         Mat_GARP(i, 8) = (SARP_full - SARP_partial) / SARP_full;    % difference in %
+        Mat_GARP(i, 9) = SARP_partial_pairs;                                            % partial index
+        Mat_GARP(i, 10) = (SARP_full_pairs - SARP_partial_pairs) / SARP_full_pairs;     % difference in %
     end
 end
 
