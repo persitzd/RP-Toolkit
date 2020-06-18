@@ -1,4 +1,4 @@
-function [output_file_config, write_all_flag, bootstrap_flag, file_val_str, ok] = HPZ_Screen_Output_File_Format(action_flag, aggregation_flag, metric_flag, main_folder, runs_counter)
+function [output_file_config, write_all_flag, bootstrap_flag, file_val_str, ok] = HPZ_Screen_Output_File_Format(action_flag, choice_set_type, aggregation_flag, metric_flag, main_folder, runs_counter)
 
 % this function promotes a user-interface screen to the user, allowing her
 % to make choices regarding the output file, and also whether to perform
@@ -17,6 +17,9 @@ function [output_file_config, write_all_flag, bootstrap_flag, file_val_str, ok] 
 % read the saved settings for this screen
 [output_file_config, write_all_flag, bootstrap_flag] = HPZ_Output_Format_Settings_Read(main_folder);
 
+
+% true if choice is from a finite set, false otherwise
+choice_from_finite_set_flag = (choice_set_type == HPZ_Constants.choice_set_finite_set);
 
 
 file_val_str = {'Value', 'Value', 'Value', 'Value', 'Value', 'Value', 'Value'};
@@ -59,7 +62,13 @@ elseif action_flag == HPZ_Constants.BI_action
     file_setting_op_enable{7} = 'off';                      % BI
 end
 
-
+if choice_from_finite_set_flag
+    % some things we can't (or don't want to allow) calculate
+    for i = [2,3,4,5,6,7]   % CFGK metric NLLS, normalized-euclidean metric NLLS, MMI (all three aggregates), BI  
+       output_file_config(i) = 0;
+       file_setting_op_enable{i} = 'off'; 
+    end
+end
 
          
 
