@@ -1,4 +1,4 @@
-function [me_param_1, me_param_2, se_param_1, se_param_2, lower_95_percent_param_1, lower_95_percent_param_2, upper_95_percent_param_1, upper_95_percent_param_2] = HPZ_Bootstrap_SE(data_matrix, treatment, number_of_samples, action_flag, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, numeric_flag, significance_level, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs)
+function [me_param_1, me_param_2, se_param_1, se_param_2, lower_95_percent_param_1, lower_95_percent_param_2, upper_95_percent_param_1, upper_95_percent_param_2] = HPZ_Bootstrap_SE(data_matrix, choice_set_type, treatment, number_of_samples, action_flag, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, numeric_flag, significance_level, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs)
 
 % This function repeatedly picks randomly n observations out of the n 
 % observations of the subject, with replacement. That means, that the common
@@ -81,7 +81,7 @@ for i=1:number_of_samples
     % recover and store parameters from bs_sample 
     
     % estimation for the subset of observations
-    [param, ~, ~] = HPZ_Estimation (bs_sample, obs_num, action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, asymmetric_flag, aggregation_flag, pref_class, numeric_flag, false, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_sub_waitbar, current_run, total_runs);
+    [param, ~, ~] = HPZ_Estimation (bs_sample, obs_num, choice_set_type, action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, asymmetric_flag, aggregation_flag, pref_class, numeric_flag, false, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_sub_waitbar, current_run, total_runs);
 
     % assigning the result of the i'th sample to the vector
     parameters(i,:) = param;

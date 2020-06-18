@@ -1,4 +1,4 @@
-function Mat = HPZ_Estimation_Residuals (action_flag, data_matrix, obs_num, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, in_sample_flag, out_sample_flag, param_1, param_2, main_criterion, pref_class, numeric_flag, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs)
+function Mat = HPZ_Estimation_Residuals (action_flag, data_matrix, obs_num, choice_set_type, treatment, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, in_sample_flag, out_sample_flag, param_1, param_2, main_criterion, pref_class, numeric_flag, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs)
 
 % this function performs residual calculations for the estimation of a
 % single subject. it may calculate in-sample residuals, out-of-sample
@@ -58,10 +58,15 @@ Mat(:,5) = 1:obs_num;
 % current (next) column to be printed
 current_col = 6;
 
-
-Choices(:, 1:4) = subject_data(1:obs_num, 3:6);
-expenditure = (Choices(:,1)*Choices(:,3)' + Choices(:,2)*Choices(:,4)')';
-endowments = diag(expenditure);
+if choice_set_type ~= HPZ_Constants.choice_set_finite_set
+    Choices(:, 1:4) = subject_data(1:obs_num, 3:6);
+    expenditure = (Choices(:,1)*Choices(:,3)' + Choices(:,2)*Choices(:,4)')';
+    endowments = diag(expenditure);
+else % i.e. choice_set_type == HPZ_Constants.choice_set_finite_set
+    Choices = subject_data(1:obs_num, 3:end);
+    expenditure = nan; %#ok<NASGU>
+    endowments = nan;
+end
 
 
 % define the waitbar
@@ -82,10 +87,14 @@ if (in_sample_flag)
     if action_flag == HPZ_Constants.NLLS_action
         
         % the optimal cohices for the subject given these parameters
-        if numeric_flag == HPZ_Constants.numeric
-            [predicted_choices, ~] = HPZ_NLLS_Choices_Numeric (param, Choices(:,3:4), endowments, treatment, function_flag, asymmetric_flag, pref_class, debugger_mode);
-        elseif numeric_flag == HPZ_Constants.analytic
-            [predicted_choices, ~] = HPZ_NLLS_Choices_Analytic(param, Choices(:,1:4), function_flag, pref_class, debugger_mode);
+        if choice_set_type ~= HPZ_Constants.choice_set_finite_set
+            if numeric_flag == HPZ_Constants.numeric
+                [predicted_choices, ~] = HPZ_NLLS_Choices_Numeric (param, Choices(:,3:4), endowments, treatment, function_flag, asymmetric_flag, pref_class, debugger_mode);
+            elseif numeric_flag == HPZ_Constants.analytic
+                [predicted_choices, ~] = HPZ_NLLS_Choices_Analytic(param, Choices(:,1:4), function_flag, pref_class, debugger_mode);
+            end
+        else
+            [predicted_choices, ~] = HPZ_NLLS_Choices_Finite_Set(param, Choices(:,1:end), function_flag, pref_class, debugger_mode);
         end
         % (there is no: "numeric_flag == HPZ_Constants.semi_numeric"
         % since semi-numeric is unique for MMI and BI)
@@ -107,7 +116,7 @@ if (in_sample_flag)
         
         % calculate in-sample difference residuals
         for i=1:obs_num
-            Mat (i, current_col+1) = main_criterion - metric_function(Choices([1:(i-1),(i+1):end], :) , predicted_choices([1:(i-1),(i+1):end], :));
+            Mat (i, current_col+1) = main_criterion - metric_function(Choices([1:(i-1),(i+1):end], 1:2) , predicted_choices([1:(i-1),(i+1):end], 1:2));
         end
         
         
@@ -168,7 +177,7 @@ if (out_sample_flag)
         end
         
         % we first perform an estimation on the truncated data
-        [param_i , criterion_i , ~] = HPZ_Estimation(adjusted_data, (obs_num-1), action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, ...
+        [param_i , criterion_i , ~] = HPZ_Estimation(adjusted_data, (obs_num-1), choice_set_type, action_flag, treatment, function_flag, param1_restrictions, param2_restrictions, ...
                                     fix_corners, metric_flag, asymmetric_flag, aggregation_flag, pref_class, numeric_flag, false, ...
                                     max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, false, current_run, total_runs);
         

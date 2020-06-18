@@ -1,4 +1,4 @@
-function [me_1, me_2, se_1, se_2, le_1, le_2, ue_1, ue_2] = HPZ_Bootstrap_SE_Helper(data, treatment, number_of_samples, action, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, numeric_flag, significance_level, rows_out, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs)
+function [me_1, me_2, se_1, se_2, le_1, le_2, ue_1, ue_2] = HPZ_Bootstrap_SE_Helper(data, choice_set_type, treatment, number_of_samples, action, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, numeric_flag, significance_level, rows_out, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs)
 
 % this function calls HPZ_Bootstrap_SE in order to perform bootstrap on the
 % subjects in the data.
@@ -24,7 +24,7 @@ function [me_1, me_2, se_1, se_2, le_1, le_2, ue_1, ue_2] = HPZ_Bootstrap_SE_Hel
 % subject's observations, with repeat, and find the estimation 
 % for this new set of observations.
 [me_param_1, me_param_2, se_param_1, se_param_2, lower_95_percent_param_1, lower_95_percent_param_2, upper_95_percent_param_1, upper_95_percent_param_2] = ...
-                HPZ_Bootstrap_SE(data, treatment, number_of_samples, action, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, ...
+                HPZ_Bootstrap_SE(data, choice_set_type, treatment, number_of_samples, action, function_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, ...
                                 asymmetric_flag, pref_class, numeric_flag, significance_level, max_time_estimation, min_counter, max_starting_points, BI_threshold, debugger_mode, active_waitbar, current_run, total_runs);
 
 % we now need to duplicate these values, for the case the user

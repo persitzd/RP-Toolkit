@@ -1,4 +1,4 @@
-function [param, criterion] = HPZ_Check_Rho_Zero_Cases(obs_num, endowments, observations, treatment, function_flag, beta_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, action_flag, numeric_flag, BI_threshold, debugger_mode)
+function [param, criterion] = HPZ_Check_Rho_Zero_Cases(obs_num, endowments, observations, choice_set_type, treatment, function_flag, beta_restrictions, fix_corners, metric_flag, aggregation_flag, asymmetric_flag, pref_class, action_flag, numeric_flag, BI_threshold, debugger_mode)
 
 % we want to check the Criterion value for every pair of (beta,rho)
 % such that beta=p-1 and rho=0, when p is an intermediate of two of the
@@ -28,31 +28,40 @@ param = zeros(1,2);
 % ratios that should be handled as identical)
 price_ratio_threshold = 0.00015;
 
-% list of all different prices ratios that the subject was revealed to
-prices_ratios = zeros(1, obs_num+2);
-
-for i=1:obs_num
-    % we always take the prices ratio as a number >= 1
-    % e.g. we always take 1.25 and not 0.8
-    if observations(i,3) > observations(i,4)
-        %prices_ratios(i+1) = data(i,5) / data(i,6);
-        prices_ratios(i+1) = observations(i,3) / observations(i,4);
-    else
-        %prices_ratios(i+1) = data(i,6) / data(i,5);
-        prices_ratios(i+1) = observations(i,4) / observations(i,3);
-    end
-end
-
 % the restrictions on the prices ratio as result of the restrictions on beta 
 prices_ratios_restrictions = beta_restrictions + 1;
 
-% in case the prices ratio 1 wasn't observed, we still need to check for a
-% prices ratio between the lowest ratio and 1
-prices_ratios(1) = max(1, prices_ratios_restrictions(1));
-% we also need to check for a prices ratio bigger than the largest prices
-% ratio observed. we arbitrarily take the maximum ratio + 1 (we write here
-% +2 so the average between this and the max ratio itself will be +1)
-prices_ratios(obs_num+2) = min(max(prices_ratios)+2, prices_ratios_restrictions(2));
+if choice_set_type ~= HPZ_Constants.choice_set_finite_set
+    
+    % list of all different prices ratios that the subject was revealed to
+    prices_ratios = nan(1, obs_num+2);
+    for i=1:obs_num
+        % we always take the prices ratio as a number >= 1
+        % e.g. we always take 1.25 and not 0.8
+        if observations(i,3) > observations(i,4)
+            %prices_ratios(i+1) = data(i,5) / data(i,6);
+            prices_ratios(i+1) = observations(i,3) / observations(i,4);
+        else
+            %prices_ratios(i+1) = data(i,6) / data(i,5);
+            prices_ratios(i+1) = observations(i,4) / observations(i,3);
+        end
+    end
+    % in case the prices ratio 1 wasn't observed, we still need to check for a
+    % prices ratio between the lowest ratio and 1
+    prices_ratios(1) = max(1, prices_ratios_restrictions(1));
+    % we also need to check for a prices ratio bigger than the largest prices
+    % ratio observed. we arbitrarily take the maximum ratio + 1 (we write here
+    % +2 so the average between this and the max ratio itself will be +1)
+    prices_ratios(obs_num+2) = min(max(prices_ratios)+2, prices_ratios_restrictions(2));
+    
+else % i.e. choice_set_type == HPZ_Constants.choice_set_finite_set
+    
+    % in this case, we may not be able to decide properly which beta values
+    % we should check, so we arbitrarily check:
+    % beta = 0.1,0.2,0.5,1,1.2,1.5,2,2.5,3,3.5,4,4.5,5,6,7,8,9,10
+    prices_ratios = 1+[0.1,0.2,0.5,1,1.2,1.5,2,2.5,3,3.5,4,4.5,5,6,7,8,9,10];
+    
+end
 
 % now we sort it, and delete double entries
 prices_ratios_by_order = sort(unique(prices_ratios));
@@ -98,7 +107,7 @@ for k=1:(num_of_intermediate_prices_ratios)
     % calculating the function value for the point (p-1,0)
     if (action_flag == HPZ_Constants.NLLS_action)
         % NLLS
-        [criterion_temp] = HPZ_NLLS_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag, debugger_mode);
+        [criterion_temp] = HPZ_NLLS_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, choice_set_type, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag, debugger_mode);
     elseif (action_flag == HPZ_Constants.MMI_action)
          % MMI
         [criterion_temp] = HPZ_MMI_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, aggregation_flag, pref_class, numeric_flag, debugger_mode);
@@ -106,7 +115,7 @@ for k=1:(num_of_intermediate_prices_ratios)
         % BI
         [criterion_temp] = HPZ_BI_Criterion([intermediate_prices_ratios_by_order(k)-1 , 0], endowments, observations, treatment, function_flag, pref_class, numeric_flag, BI_threshold, debugger_mode);
     end
-
+    
     if (k == 1) || (criterion_temp < criterion)
         % in the first time, and also in the next times if we got a 
         % better estimation, we enter the new result to all
