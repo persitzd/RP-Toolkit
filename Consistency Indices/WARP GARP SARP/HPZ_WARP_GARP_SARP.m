@@ -14,12 +14,16 @@ function [FLAGS, VIO_PAIRS, VIOLATIONS, WARP, SARP] = HPZ_WARP_GARP_SARP(identic
 
 % RP(i,j)*RP'(j,i)=1 iff (x^i R x^j)&(x^j R x^i), otherwise it equals 0. For every i,j identical
 % choice SARP(i,j)=0 (including i=j of course) 
-
-% OLD CODE:
-%SARP = RP.*(RP') - identical_choice;
-% NEW CODE:
+% 
+% % OLD CODE:
+% SARP = RP.*(RP') - identical_choice;
+% % NEW CODE:
+% RP_no_identical = min(RP, ~identical_choice);
+% SARP = RP_no_identical .* (RP_no_identical');
+% NEWER CODE (starting 01.06.2020):
+DRP_no_identical = min(DRP, ~identical_choice);
 RP_no_identical = min(RP, ~identical_choice);
-SARP = RP_no_identical .* (RP_no_identical');
+SARP = RP_no_identical .* (DRP_no_identical');
 
 % A flag that keeps the SARP result. It is 0 if and only if the data
 % satisfies SARP.
