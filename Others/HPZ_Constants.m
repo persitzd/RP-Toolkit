@@ -184,6 +184,10 @@ properties (Constant)
     no_pref = 0;
     risk_pref = 1;
     OR_pref = 2;
+    
+    % type of choice set - budget line, or a finite set of options
+    choice_set_budget_line = 1;
+    choice_set_finite_set = 2;
 
     % functional forms (function_flag)
     % risk functional forms
@@ -297,6 +301,7 @@ properties (Constant)
     data_name = 'Data_Name';
     file_name = 'File_Name';
     pref_class = 'Pref_Class';
+    choice_set_type = 'Choice_Set_Type';
     subject_index = 'Subject_Index';
     obs_index = 'Observation_Index';
     quantity1_index = 'Quantity1_Index';
@@ -308,6 +313,7 @@ properties (Constant)
     data_settings_headers = {HPZ_Constants.data_name,...
                             HPZ_Constants.file_name,...
                             HPZ_Constants.pref_class,...
+                            HPZ_Constants.choice_set_type,...
                             HPZ_Constants.subject_index,...
                             HPZ_Constants.obs_index,...
                             HPZ_Constants.quantity1_index,...
