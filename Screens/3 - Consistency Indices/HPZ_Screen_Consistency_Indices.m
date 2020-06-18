@@ -1,4 +1,4 @@
-function [Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, ok] = HPZ_Screen_Consistency_Indices(main_folder, runs_counter, pref_class, num_of_goods)  
+function [Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, ok] = HPZ_Screen_Consistency_Indices(main_folder, runs_counter, pref_class, choice_set_type, num_of_goods)  
 
 % this function creates a user interface screen from which the user chooses
 % which of the consistency and inconsistency measures to be calculated, and
@@ -473,7 +473,7 @@ label_Power_Test = uicontrol('Parent',panel, ...
     'string','Power Test'); %#ok<NASGU>
 
 %% perform power test or not
-if num_of_goods ~= 2
+if num_of_goods ~= 2 % || choice_set_type ~= HPZ_Constants.choice_set_budget_line
     % we currently only implement power test for 2 goods
     allow_power_test = 0;
     power_test_settings(1) = 0; 
@@ -533,6 +533,7 @@ power_test_num_of_simulations_input = uicontrol('Parent',panel, ...
 
 % whether the preferences are symmetric; we assume that is the case only in risk preferences 
 symmetric_preferences = (pref_class == HPZ_Constants.risk_pref);
+%linear_budget_line = (choice_set_type == HPZ_Constants.choice_set_budget_line);
 
 %% standard or given FOSD
 % current bottom coordinate
