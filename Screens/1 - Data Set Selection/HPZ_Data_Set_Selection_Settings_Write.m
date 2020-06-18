@@ -1,4 +1,4 @@
-function HPZ_Data_Set_Selection_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments, main_folder)
+function HPZ_Data_Set_Selection_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_choice_set_types, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments, main_folder)
 
 % this file write the dataset settings to the file, after the user may have 
 % changed them (in the screen presented by HPZ_Data_Set_Selection).
@@ -37,6 +37,10 @@ sz = size(data_list_prefs);
 if (sz(1) < sz(2))
     data_list_prefs = data_list_prefs';
 end
+sz = size(data_list_choice_set_types);
+if (sz(1) < sz(2))
+    data_list_choice_set_types = data_list_choice_set_types';
+end
 sz = size(data_list_subject);
 if (sz(1) < sz(2))
     data_list_subject = data_list_subject';
@@ -71,7 +75,7 @@ if (sz(1) < sz(2))
 end
 
 % create the data settings table
-data_settings = table(data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments);
+data_settings = table(data_list_str, data_list_path, data_list_prefs, data_list_choice_set_types, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments);
 
 % set the headers of the table
 for i=1:max(size(HPZ_Constants.data_settings_headers))

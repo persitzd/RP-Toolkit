@@ -25,6 +25,7 @@ data_list_path = {strcat(HPZ_Constants.data_files_dir, '/Data_CFGK_2007.csv'),..
 %                 strcat(main_folder, '/', HPZ_Constants.data_files_dir, '/Data_KLP_2016.csv'),...
 %                 strcat(main_folder, '/', HPZ_Constants.data_files_dir, '/Data_HPZ_2016.csv')};
 data_list_prefs = {'1', '1', '1', '1'};
+data_list_choice_set_types = {'1', '1', '1', '1'};
 data_list_subject = {'1', '1', '3', '5'};
 data_list_obs = {'2', '2', '6', '7'};
 data_list_quantity1 = {'3', '3', '8', '8'};
@@ -35,7 +36,7 @@ data_set = {'1', '', '', ''};
 fix_endowments = {'1', '', '', ''};
 
 % create the data settings table
-data_settings = table(data_list_str', data_list_path', data_list_prefs', data_list_subject', data_list_obs', data_list_quantity1', data_list_quantity2', data_list_maxquantity1', data_list_maxquantity2', data_set', fix_endowments');
+data_settings = table(data_list_str', data_list_path', data_list_prefs', data_list_choice_set_types', data_list_subject', data_list_obs', data_list_quantity1', data_list_quantity2', data_list_maxquantity1', data_list_maxquantity2', data_set', fix_endowments');
 
 % set the headers of the table
 for i=1:max(size(HPZ_Constants.data_settings_headers))

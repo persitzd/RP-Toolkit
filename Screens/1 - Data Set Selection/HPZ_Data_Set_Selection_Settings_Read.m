@@ -1,4 +1,4 @@
-function [data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments] = HPZ_Data_Set_Selection_Settings_Read(main_folder)
+function [data_list_str, data_list_path, data_list_prefs, data_list_choice_set_types, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments] = HPZ_Data_Set_Selection_Settings_Read(main_folder)
 
 % this file reads the dataset settings.
 % for each dataset there is its name, path, columns numbers of the required 
@@ -15,6 +15,7 @@ try
     data_list_str = data_settings{:,HPZ_Constants.data_name};
     data_list_path = data_settings{:,HPZ_Constants.file_name};
     data_list_prefs = data_settings{:,HPZ_Constants.pref_class};
+    data_list_choice_set_types = data_settings{:,HPZ_Constants.choice_set_type}; 
     data_list_subject = data_settings{:,HPZ_Constants.subject_index};
     data_list_obs = data_settings{:,HPZ_Constants.obs_index};
     data_list_quantity1 = data_settings{:,HPZ_Constants.quantity1_index};
@@ -35,6 +36,7 @@ catch
     data_list_str = data_settings{:,HPZ_Constants.data_name};
     data_list_path = data_settings{:,HPZ_Constants.file_name};
     data_list_prefs = data_settings{:,HPZ_Constants.pref_class};
+    data_list_choice_set_types = data_settings{:,HPZ_Constants.choice_set_type}; 
     data_list_subject = data_settings{:,HPZ_Constants.subject_index};
     data_list_obs = data_settings{:,HPZ_Constants.obs_index};
     data_list_quantity1 = data_settings{:,HPZ_Constants.quantity1_index};
@@ -68,6 +70,7 @@ else
     % we need to change 7 of the above from vectors to cell arrays
     
     data_list_prefs_temp = data_list_prefs;
+    data_list_choice_set_types_temp = data_list_choice_set_types;
     data_list_subject_temp = data_list_subject;
     data_list_obs_temp = data_list_obs;
     data_list_quantity1_temp = data_list_quantity1;
@@ -76,6 +79,7 @@ else
     data_list_maxquantity2_temp = data_list_maxquantity2;
     
     data_list_prefs = cell(1,length);
+    data_list_choice_set_types = cell(1,length);
     data_list_subject = cell(1,length);
     data_list_obs = cell(1,length);
     data_list_quantity1 = cell(1,length);
@@ -85,6 +89,7 @@ else
     
     for i=1:length
         data_list_prefs{i} = data_list_prefs_temp(i);
+        data_list_choice_set_types{i} = data_list_choice_set_types_temp(i);
         data_list_subject{i} = data_list_subject_temp(i);
         data_list_obs{i} = data_list_obs_temp(i);
         data_list_quantity1{i} = data_list_quantity1_temp(i);

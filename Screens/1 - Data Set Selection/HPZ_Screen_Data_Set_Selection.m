@@ -1,4 +1,4 @@
-function [data_matrix, data_pref_class, ok] = HPZ_Screen_Data_Set_Selection(main_folder, runs_counter)
+function [data_matrix, data_pref_class, data_choice_set_type, ok] = HPZ_Screen_Data_Set_Selection(main_folder, runs_counter)
 
 % this function promotes a user-interface screen to the user, allowing her
 % to choose a data on which to perform consistency checks or parameters 
@@ -20,10 +20,11 @@ function [data_matrix, data_pref_class, ok] = HPZ_Screen_Data_Set_Selection(main
 % initialization to prevent erros
 data_matrix = 0;
 data_pref_class = 0;
+data_choice_set_type = 0;
 ok = 0;
 
 %% get the data settings
-[data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments] = HPZ_Data_Set_Selection_Settings_Read(main_folder);
+[data_list_str, data_list_path, data_list_prefs, data_list_choice_set_types, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments] = HPZ_Data_Set_Selection_Settings_Read(main_folder);
 
 % We check if all these files actually exist (in the defined paths).
 % For example, it could be that the file's location was changed, or that
@@ -44,6 +45,7 @@ helper_file_exists = helper_vector .* file_exists;
 data_list_str = data_list_str(helper_vector == helper_file_exists);
 data_list_path = data_list_path(helper_vector == helper_file_exists);
 data_list_prefs = data_list_prefs(helper_vector == helper_file_exists);
+data_list_choice_set_types = data_list_choice_set_types(helper_vector == helper_file_exists);
 data_list_subject = data_list_subject(helper_vector == helper_file_exists);
 data_list_obs = data_list_obs(helper_vector == helper_file_exists);
 data_list_quantity1 = data_list_quantity1(helper_vector == helper_file_exists);
@@ -330,6 +332,7 @@ function [] = remove_file_call(varargin)
     data_list_str = data_list_str(helper_vector ~= helper_vector(data_set));
     data_list_path = data_list_path(helper_vector ~= helper_vector(data_set));
     data_list_prefs = data_list_prefs(helper_vector ~= helper_vector(data_set));
+    data_list_choice_set_types = data_list_choice_set_types(helper_vector ~= helper_vector(data_set));
     data_list_subject = data_list_subject(helper_vector ~= helper_vector(data_set));
     data_list_obs = data_list_obs(helper_vector ~= helper_vector(data_set));
     data_list_quantity1 = data_list_quantity1(helper_vector ~= helper_vector(data_set));
@@ -352,8 +355,8 @@ function [] = browse_file_call(varargin)
     
     % if the user chose a file (didn't cancel)
     if (FileName ~= 0)
-        
-        [data_name, locations, pref_class, ok] = HPZ_Screen_Data_Set_Adding(FileName);
+         
+        [data_name, choice_set_type, locations, pref_class, ok] = HPZ_Screen_Data_Set_Adding(FileName);
         if (ok == 1)
             % then the list will not be empty after the addition - 
             % removing file and pressing ok should be disabled
@@ -375,7 +378,11 @@ function [] = browse_file_call(varargin)
             data_list_str{list_size+1} = data_name;
             data_list_path{list_size+1} = strcat(PathName, FileName);
             data_list_prefs{list_size+1} = pref_class;
+            data_list_choice_set_types{list_size+1} = choice_set_type;
             
+            if choice_set_type == HPZ_Constants.choice_set_finite_set
+               locations = 1:6;   % just to prevent an error 
+            end
             data_list_subject{list_size+1} = locations(1);
             data_list_obs{list_size+1} = locations(2);
             data_list_quantity1{list_size+1} = locations(3);
@@ -422,8 +429,14 @@ function [] = ok_button_call(varargin)
                 data_list_quantity2{data_set},...
                 data_list_maxquantity1{data_set},...
                 data_list_maxquantity2{data_set}];
+    data_choice_set_type = data_list_choice_set_types{data_set};
     
-    [data_matrix, success, is_valid] = HPZ_Data_Format (file_path, locations);
+    if data_choice_set_type == HPZ_Constants.choice_set_budget_line
+        [data_matrix, success, is_valid] = HPZ_Data_Format (file_path, locations);
+    elseif data_choice_set_type == HPZ_Constants.choice_set_finite_set
+        [data_matrix, success, is_valid] = HPZ_Data_Format_Finite_Set (file_path);
+    end
+    
     if (~success)
         % the file does not exist or is not available - we end this run
         msgbox(char(strcat(HPZ_Constants.could_not_read_file_1, {' '}, file_path, HPZ_Constants.could_not_read_file_2)));
@@ -433,36 +446,49 @@ function [] = ok_button_call(varargin)
         % remove the file from the list (on second thought - leave it, but don't allow the user to continue with this file until issues in the file will be solved)    
         %remove_file_call();
     else
-        % check if endowments are (approximately) equal to 1, otherwise print a warning 
-        % the endowments (may not equal to 1)
-        %endowments = data_matrix(:,3) .* data_matrix(:,5) + data_matrix(:,4) .* data_matrix(:,6);
-        [~, num_of_columns] = size(data_matrix);
-        num_of_goods = (num_of_columns - 2) / 2;
-        endowments = sum( data_matrix(:, (2+1):(2+num_of_goods)) .* data_matrix(:, (2+num_of_goods+1):(2+num_of_goods+num_of_goods)) , 2 );
-        % number of endowment significantly different from 1
-        num_of_errors = sum ( (endowments > 1+HPZ_Constants.fix_endowments_error) | (endowments < 1/(1+HPZ_Constants.fix_endowments_error)) );
-        if (num_of_errors)
-            % the file does not exist or is not available - we end this run
-            msgbox(char(strcat({'There were '}, num2str(num_of_errors), {' cases that the chosen bundle was significantly not on the budget line (the expenditure of the chosen bundle is more than '}, num2str(1+HPZ_Constants.fix_endowments_error), {' or less than '}, num2str(1/(1+HPZ_Constants.fix_endowments_error)), {' times the budget constraint). Please fix your data such that all observations will be (at least approximately) on the budget line.'})));
-            % remove the file from the list (on second thought - leave it, but don't allow the user to continue with this file until issues in the file will be solved)   
-            %remove_file_call();
-        else
-            % fixing the bundles so their endowments will be equal exactly to 1.
-            % this fix is needed because of rounding that makes the endowment a little
-            % different from 1, which may damage the estimations to some extent
-            if fix_endowments
-                % if the user chose to fix all bundles so their endwoments will be exactly 1, 
-                % if the difference (in percentage) between 1 and the endowment is more
-                % than this threshold, a warning will be given
-                data_matrix = HPZ_Fix_Endowments_To_One(data_matrix, 1);
-            end
+        if data_choice_set_type == HPZ_Constants.choice_set_budget_line
+            
+            % check if endowments are (approximately) equal to 1, otherwise print a warning 
+            % the endowments (may not equal to 1)
+            %endowments = data_matrix(:,3) .* data_matrix(:,5) + data_matrix(:,4) .* data_matrix(:,6);
+            [~, num_of_columns] = size(data_matrix);
+            num_of_goods = (num_of_columns - 2) / 2;
+            endowments = sum( data_matrix(:, (2+1):(2+num_of_goods)) .* data_matrix(:, (2+num_of_goods+1):(2+num_of_goods+num_of_goods)) , 2 );
+            % number of endowment significantly different from 1
+            num_of_errors = sum ( (endowments > 1+HPZ_Constants.fix_endowments_error) | (endowments < 1/(1+HPZ_Constants.fix_endowments_error)) );
+            if (num_of_errors)
+                % the file does not exist or is not available - we end this run
+                msgbox(char(strcat({'There were '}, num2str(num_of_errors), {' cases that the chosen bundle was significantly not on the budget line (the expenditure of the chosen bundle is more than '}, num2str(1+HPZ_Constants.fix_endowments_error), {' or less than '}, num2str(1/(1+HPZ_Constants.fix_endowments_error)), {' times the budget constraint). Please fix your data such that all observations will be (at least approximately) on the budget line.'})));
+                % remove the file from the list (on second thought - leave it, but don't allow the user to continue with this file until issues in the file will be solved)   
+                %remove_file_call();
+            else
+                % fixing the bundles so their endowments will be equal exactly to 1.
+                % this fix is needed because of rounding that makes the endowment a little
+                % different from 1, which may damage the estimations to some extent
+                if fix_endowments && data_choice_set_type == HPZ_Constants.choice_set_budget_line
+                    % if the user chose to fix all bundles so their endwoments will be exactly 1, 
+                    % if the difference (in percentage) between 1 and the endowment is more
+                    % than this threshold, a warning will be given
+                    data_matrix = HPZ_Fix_Endowments_To_One(data_matrix, 1);
+                end
 
+                data_pref_class = data_list_prefs{data_set};
+                ok = 1;
+
+                HPZ_Data_Set_Selection_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_choice_set_types, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments, main_folder);
+                % close the window
+                close(fh);
+            end
+            
+        elseif data_choice_set_type == HPZ_Constants.choice_set_finite_set
+            
             data_pref_class = data_list_prefs{data_set};
             ok = 1;
 
-            HPZ_Data_Set_Selection_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments, main_folder);
+            HPZ_Data_Set_Selection_Settings_Write(data_list_str, data_list_path, data_list_prefs, data_list_choice_set_types, data_list_subject, data_list_obs, data_list_quantity1, data_list_quantity2, data_list_maxquantity1, data_list_maxquantity2, data_set, fix_endowments, main_folder);
             % close the window
             close(fh);
+            
         end
 
     end
