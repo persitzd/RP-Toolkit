@@ -1,4 +1,4 @@
-function [aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, ok] = HPZ_Screen_Optimization_Settings(action_flag, numeric_flag, max_starting_points, possible_num_convergence_points, main_folder, runs_counter)   
+function [aggregation_flag, metric_flag, max_time_estimation, min_counter, parallel_flag, ok] = HPZ_Screen_Optimization_Settings(action_flag, choice_set_type, numeric_flag, max_starting_points, possible_num_convergence_points, main_folder, runs_counter)   
 
 % this function promotes a user-interface screen to the user, allowing her
 % to make choices regarding the time limit and/or others limits on the
@@ -38,22 +38,41 @@ MMI_time = max_time_str;
 BI_time = max_time_str;
 
 
+% true if choice is from a finite set, false otherwise
+choice_from_finite_set_flag = (choice_set_type == HPZ_Constants.choice_set_finite_set);
 
 % NLLS
 if action_flag == HPZ_Constants.NLLS_action
     enable_string_NLLS = 'on';
+    enable_string_NLLS_euclid = 'on';
+    enable_string_NLLS_CFGK = 'on';
+    enable_string_NLLS_normalized_euclid = 'on';
     enable_string_BI = 'off';
     enable_string_MMI = 'off';
+    % in case the choice is from a finite set of options, we do not allow to use CFGK metric 
+    if choice_from_finite_set_flag
+        enable_string_NLLS_CFGK = 'off';
+        enable_string_NLLS_normalized_euclid = 'off';
+        if (metric_flag == HPZ_Constants.CFGK_metric) || (metric_flag == HPZ_Constants.normalized_euclidean_metric) 
+            metric_flag = HPZ_Constants.euclidean_metric;
+        end
+    end
 
 % MMI
 elseif action_flag == HPZ_Constants.MMI_action
     enable_string_NLLS = 'off';
+    enable_string_NLLS_euclid = 'off';
+    enable_string_NLLS_CFGK = 'off';
+    enable_string_NLLS_normalized_euclid = 'off';
     enable_string_BI = 'off';
     enable_string_MMI = 'on';
 
 % BI
 elseif action_flag == HPZ_Constants.BI_action
     enable_string_NLLS = 'off';
+    enable_string_NLLS_euclid = 'off';
+    enable_string_NLLS_CFGK = 'off';
+    enable_string_NLLS_normalized_euclid = 'off';
     enable_string_BI = 'on';
     enable_string_MMI = 'off';
 end
@@ -189,8 +208,6 @@ figure_title = char(strcat('Optimization Settings (', HPZ_Constants.current_run_
 % width including scroll bar if there is one
 pos = get(S.fh,'position');
 full_width = pos(3);
-
-
 
             
             
@@ -453,7 +470,7 @@ S.bg_NLSS = uibuttongroup('Parent',S.panel, ...
 
 S.metric_NLLS_rd(1) = uicontrol(S.bg_NLSS,...
                 'value',(metric_flag == HPZ_Constants.euclidean_metric),...
-                'enable', enable_string_NLLS, ...
+                'enable', enable_string_NLLS_euclid, ...
                 'style','rad',...
                 'unit','pix',...
                 'position',[three_offsets2(1) , radio_bottom , sub_element_width2 , radio_height],...
@@ -462,7 +479,7 @@ S.metric_NLLS_rd(1) = uicontrol(S.bg_NLSS,...
 
 S.metric_NLLS_rd(2) = uicontrol(S.bg_NLSS,...
                 'value',(metric_flag == HPZ_Constants.CFGK_metric),...
-                'enable', enable_string_NLLS, ...
+                'enable', enable_string_NLLS_CFGK, ...
                 'style','rad',...
                 'unit','pix',...
                 'position',[three_offsets2(2) , radio_bottom , sub_element_width2 , radio_height],...
@@ -471,7 +488,7 @@ S.metric_NLLS_rd(2) = uicontrol(S.bg_NLSS,...
             
 S.metric_NLLS_rd(3) = uicontrol(S.bg_NLSS,...
                 'value',(metric_flag == HPZ_Constants.normalized_euclidean_metric),...
-                'enable', enable_string_NLLS, ...
+                'enable', enable_string_NLLS_normalized_euclid, ...
                 'style','rad',...
                 'unit','pix',...
                 'position',[three_offsets2(3) , radio_bottom , sub_element_width2 , radio_height],...
