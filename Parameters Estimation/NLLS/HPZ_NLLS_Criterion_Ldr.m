@@ -16,7 +16,7 @@ ldr_chosen = log(observations(:,2)./observations(:,1));
 ldr_predicted = log(optimal_bundles(:,2)./optimal_bundles(:,1));
 
 ldr_criterions = (ldr_chosen - ldr_predicted).^2;
-   
+
 end
    
     

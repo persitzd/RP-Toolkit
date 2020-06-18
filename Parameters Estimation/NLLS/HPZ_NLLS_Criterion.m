@@ -1,4 +1,4 @@
-function [criterion, param] = HPZ_NLLS_Criterion (param, endowments, observations, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag, debugger_mode)
+function [criterion, param] = HPZ_NLLS_Criterion (param, endowments, observations, choice_set_type, treatment, function_flag, fix_corners, metric_flag, asymmetric_flag, pref_class, numeric_flag, debugger_mode)
 
 % The function calculates the NLLS criterion (either by euclidean metric
 % or by the metric used in CFGK (2007), or by normalized euclidean) 
@@ -16,7 +16,7 @@ function [criterion, param] = HPZ_NLLS_Criterion (param, endowments, observation
 
 
 % calculating all metrics at once
-[euclidean_criterion, CFGK_criterion, normalized_euclidean_criterion, param] = HPZ_NLLS_Metrics (param, endowments, observations, treatment, function_flag, fix_corners, asymmetric_flag, pref_class, numeric_flag, debugger_mode);
+[euclidean_criterion, CFGK_criterion, normalized_euclidean_criterion, param] = HPZ_NLLS_Metrics (param, endowments, observations, choice_set_type, treatment, function_flag, fix_corners, asymmetric_flag, pref_class, numeric_flag, debugger_mode);
 
 % taking the desired metric
 if metric_flag == HPZ_Constants.euclidean_metric
