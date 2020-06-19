@@ -65,7 +65,7 @@ temp_observations = [observations(:,1:2)*Endowment , observations(:,3:4)/Endowme
 
 % the optimal bundle for these prices assuming these
 % functional form and estimated parameters
-optimal_choices = HPZ_NLLS_Choices_Analytic(param, temp_observations, function_flag, pref_class);
+optimal_choices = HPZ_NLLS_Choices_Analytic(param, temp_observations, function_flag, pref_class, debugger_mode);
 
 
 
