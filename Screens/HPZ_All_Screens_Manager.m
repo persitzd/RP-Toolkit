@@ -120,12 +120,18 @@ while isempty(action_flag) || ~((action_flag == HPZ_Constants.Consistency_action
         
     elseif pref_class ~= HPZ_Constants.no_pref && choice_set_type == HPZ_Constants.choice_set_finite_set
         % we allow only Consistency Indices and NLLS (MMI is more problematic)  
+        if action_choice ~= HPZ_Constants.Consistency_action && action_choice ~= HPZ_Constants.NLLS_action
+           action_choice = HPZ_Constants.Consistency_action; 
+        end
         [action_choice, ok] = listdlg('PromptString','Action Selection', 'InitialValue',action_choice,...
             'SelectionMode','single', 'ListString',{HPZ_Constants.Consistency_action_name, HPZ_Constants.NLLS_action_name},...
             'Name','Action Selection', 'ListSize',list_size, 'uh',30, 'fus',8, 'ffs',8);
         
     else % pref_class == HPZ_Constants.no_pref
         % we allow only Consistency Indices
+        if action_choice ~= HPZ_Constants.Consistency_action
+           action_choice = HPZ_Constants.Consistency_action; 
+        end
         [action_choice, ok] = listdlg('PromptString','Action Selection', 'InitialValue',action_choice,...
             'SelectionMode','single', 'ListString',{HPZ_Constants.Consistency_action_name},...
             'Name','Action Selection', 'ListSize',list_size, 'uh',30, 'fus',8, 'ffs',8);
