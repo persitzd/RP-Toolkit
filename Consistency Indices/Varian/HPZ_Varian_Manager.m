@@ -210,15 +210,15 @@ if out_of_sample_required
 %                 end
                 out_sample_one_minus_v = subset_out_of_sample_one_minus_v(j,:,:);
                 % now we assign the results
-                average_var_out_sample(current_subset(j),1) = mean([out_sample_one_minus_v(:,1)' , one_minus_v_avg(indices_outside_subset,1)']);
-                average_var_out_sample(current_subset(j),2) = mean([out_sample_one_minus_v(:,2)' , one_minus_v_avg(indices_outside_subset,2)']);
-                average_var_out_sample(current_subset(j),3) = mean([out_sample_one_minus_v(:,3)' , one_minus_v_avg(indices_outside_subset,3)']);
-                meanssq_var_out_sample(current_subset(j),1) = sqrt(mean([out_sample_one_minus_v(:,4)' , one_minus_v_meanssq(indices_outside_subset,1)'].^2));
-                meanssq_var_out_sample(current_subset(j),2) = sqrt(mean([out_sample_one_minus_v(:,5)' , one_minus_v_meanssq(indices_outside_subset,2)'].^2));
-                meanssq_var_out_sample(current_subset(j),3) = sqrt(mean([out_sample_one_minus_v(:,6)' , one_minus_v_meanssq(indices_outside_subset,3)'].^2));
-                max_var_out_sample(current_subset(j),1) = max([out_sample_one_minus_v(:,7)' , one_minus_v_max(indices_outside_subset,1)']);
-                max_var_out_sample(current_subset(j),2) = max([out_sample_one_minus_v(:,8)' , one_minus_v_max(indices_outside_subset,2)']);
-                max_var_out_sample(current_subset(j),3) = max([out_sample_one_minus_v(:,9)' , one_minus_v_max(indices_outside_subset,3)']);
+                average_var_out_sample(current_subset(j),1) = mean([out_sample_one_minus_v(:,:,1) , one_minus_v_avg(indices_outside_subset,1)']);
+                average_var_out_sample(current_subset(j),2) = mean([out_sample_one_minus_v(:,:,2) , one_minus_v_avg(indices_outside_subset,2)']);
+                average_var_out_sample(current_subset(j),3) = mean([out_sample_one_minus_v(:,:,3) , one_minus_v_avg(indices_outside_subset,3)']);
+                meanssq_var_out_sample(current_subset(j),1) = sqrt(mean([out_sample_one_minus_v(:,:,4) , one_minus_v_meanssq(indices_outside_subset,1)'].^2));
+                meanssq_var_out_sample(current_subset(j),2) = sqrt(mean([out_sample_one_minus_v(:,:,5) , one_minus_v_meanssq(indices_outside_subset,2)'].^2));
+                meanssq_var_out_sample(current_subset(j),3) = sqrt(mean([out_sample_one_minus_v(:,:,6) , one_minus_v_meanssq(indices_outside_subset,3)'].^2));
+                max_var_out_sample(current_subset(j),1) = max([out_sample_one_minus_v(:,:,7) , one_minus_v_max(indices_outside_subset,1)']);
+                max_var_out_sample(current_subset(j),2) = max([out_sample_one_minus_v(:,:,8) , one_minus_v_max(indices_outside_subset,2)']);
+                max_var_out_sample(current_subset(j),3) = max([out_sample_one_minus_v(:,:,9) , one_minus_v_max(indices_outside_subset,3)']);
                 %max_var_out_sample(current_subset(j)) = max(remaining_max_var, out_sample_Var(1));
                 %average_var_out_sample(current_subset(j)) = ( out_sample_Var(2)*(length(current_subset) - 1) + remaining_average_var*(obs_num - length(current_subset)) ) / (obs_num - 1);
                 %meanssq_var_out_sample(current_subset(j)) = sqrt( ( (out_sample_Var(3)^2)*(length(current_subset) - 1) + (remaining_meanssq_var^2)*(obs_num - length(current_subset)) ) / (obs_num - 1) );
@@ -243,6 +243,9 @@ if out_of_sample_required
 end
 
 % finalizing the out-of-sample residuals
+%average_var_out_sample
+%meanssq_var_out_sample
+%max_var_out_sample
 Var_out_of_sample_residuals = [average_var_out_sample , meanssq_var_out_sample , max_var_out_sample];
 
 
@@ -366,30 +369,35 @@ if VARIAN_flags(2)
                 Varian_Mat(:, col_counter + 1) = NaN;
                 Varian_Mat(:, col_counter + 2) = NaN;
                 Varian_Mat(:, col_counter + 3) = NaN;
-            else
+            elseif Varian_Bounds(1) < Varian_Bounds(3)
                 % it is not exact
                 Varian_Mat(:, col_counter) = NaN;
                 Varian_Mat(:, col_counter + 1) = Varian_Bounds(1);
                 Varian_Mat(:, col_counter + 2) = Varian_Bounds(2);
                 Varian_Mat(:, col_counter + 3) = Varian_Bounds(3);
+            else
+                error('in main varian index: upper bound cannot be strictly smaller than lower bound');
             end
             % update the counter
             col_counter = col_counter + 4;
 
             % partial index
             for i=1:obs_num
+                %i
                 if Var_out_of_sample_residuals(i,1) == Var_out_of_sample_residuals(i,3)
                     % it is exact
                     Varian_Mat(i, col_counter)     = Var_out_of_sample_residuals(i,2);
                     Varian_Mat(i, col_counter + 1) = NaN;
                     Varian_Mat(i, col_counter + 2) = NaN;
                     Varian_Mat(i, col_counter + 3) = NaN;
-                else
+                elseif Var_out_of_sample_residuals(i,1) < Var_out_of_sample_residuals(i,3)
                     % it is not exact
                     Varian_Mat(i, col_counter)     = NaN;
                     Varian_Mat(i, col_counter + 1) = Var_out_of_sample_residuals(i,1);
                     Varian_Mat(i, col_counter + 2) = Var_out_of_sample_residuals(i,2);
                     Varian_Mat(i, col_counter + 3) = Var_out_of_sample_residuals(i,3);
+                else
+                    error('in out-of-sample varian residuals: upper bound cannot be strictly smaller than lower bound');
                 end
             end
             % update the counter
@@ -432,12 +440,14 @@ if VARIAN_flags(2)
                 Varian_Mat(:, col_counter + 1) = NaN;
                 Varian_Mat(:, col_counter + 2) = NaN;
                 Varian_Mat(:, col_counter + 3) = NaN;
-            else
+            elseif Varian_Bounds(4) < Varian_Bounds(6)
                 % it is not exact
                 Varian_Mat(:, col_counter)     = NaN;
                 Varian_Mat(:, col_counter + 1) = Varian_Bounds(4);
                 Varian_Mat(:, col_counter + 2) = Varian_Bounds(5);
                 Varian_Mat(:, col_counter + 3) = Varian_Bounds(6);
+            else
+                error('in main varian index: upper bound cannot be strictly smaller than lower bound');
             end
             % update the counter
             col_counter = col_counter + 4;
@@ -450,12 +460,14 @@ if VARIAN_flags(2)
                     Varian_Mat(i, col_counter + 1) = NaN;
                     Varian_Mat(i, col_counter + 2) = NaN;
                     Varian_Mat(i, col_counter + 3) = NaN;
-                else
+                elseif Var_out_of_sample_residuals(i,4) < Var_out_of_sample_residuals(i,6)
                     % it is not exact
                     Varian_Mat(i, col_counter)     = NaN;
                     Varian_Mat(i, col_counter + 1) = Var_out_of_sample_residuals(i,4);
                     Varian_Mat(i, col_counter + 2) = Var_out_of_sample_residuals(i,5);
                     Varian_Mat(i, col_counter + 3) = Var_out_of_sample_residuals(i,6);
+                else
+                    error('in out-of-sample varian residuals: upper bound cannot be strictly smaller than lower bound');
                 end
             end
             % update the counter
@@ -498,12 +510,14 @@ if VARIAN_flags(2)
                 Varian_Mat(:, col_counter + 1) = NaN;
                 Varian_Mat(:, col_counter + 2) = NaN;
                 Varian_Mat(:, col_counter + 3) = NaN;
-            else
+            elseif Varian_Bounds(7) < Varian_Bounds(9)
                 % it is not exact
                 Varian_Mat(:, col_counter)     = NaN;
                 Varian_Mat(:, col_counter + 1) = Varian_Bounds(7);
                 Varian_Mat(:, col_counter + 2) = Varian_Bounds(8);
                 Varian_Mat(:, col_counter + 3) = Varian_Bounds(9);
+            else
+                error('in main varian index: upper bound cannot be strictly smaller than lower bound');
             end
             % update the counter
             col_counter = col_counter + 4;
@@ -516,12 +530,14 @@ if VARIAN_flags(2)
                     Varian_Mat(i, col_counter + 1) = NaN;
                     Varian_Mat(i, col_counter + 2) = NaN;
                     Varian_Mat(i, col_counter + 3) = NaN;
-                else
+                elseif Var_out_of_sample_residuals(i,7) < Var_out_of_sample_residuals(i,9)
                     % it is not exact
                     Varian_Mat(i, col_counter)     = NaN;
                     Varian_Mat(i, col_counter + 1) = Var_out_of_sample_residuals(i,7);
                     Varian_Mat(i, col_counter + 2) = Var_out_of_sample_residuals(i,8);
                     Varian_Mat(i, col_counter + 3) = Var_out_of_sample_residuals(i,9);
+                else
+                    error('in out-of-sample varian residuals: upper bound cannot be strictly smaller than lower bound');
                 end
             end
             % update the counter
