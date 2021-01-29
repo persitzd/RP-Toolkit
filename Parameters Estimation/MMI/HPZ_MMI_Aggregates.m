@@ -30,7 +30,7 @@ max_criterion = max(criterions);
 average_criterion = mean(criterions);
 
 % root square of average sum of squares waste
-sqrt_avg_sum_of_squares_criterion = sqrt(mean(criterions.^2));
+sqrt_avg_sum_of_squares_criterion = sqrt(Smart_MeanSqr(criterions));
 % (we intentionally avoid using meansqr because it emits infs and nans. we
 % prefer the program and the user to get clearly unreasonable results,
 % rather than results that seem to make sense but are in fact erroneous
