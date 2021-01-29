@@ -1,4 +1,4 @@
-function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, choice_set_type, Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, max_time_estimation, print_precision, one_residuals_file, waitbar_settings, Varian_algorithm_settings, main_folder_for_results, current_run, total_runs) %#ok<INUSL>
+function HPZ_Consistency_Indices_Manager(data_matrix, subjects_index, choice_set_type, Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, max_time_estimation, print_precision, one_residuals_file, print_single_subject, waitbar_settings, Varian_algorithm_settings, main_folder_for_results, current_run, total_runs) %#ok<INUSL>
 
 % this function is the container for the whole inconsistency indices module - 
 % all inconsistency indices procedures (consistency check, printing results to
@@ -246,6 +246,13 @@ for i=1:chosen_subjects_num
         obs_num = data_matrix(rows,2);
     end
     
+    % precision of numbers when printing
+    precision_string = strcat('%10.', num2str(print_precision), 'g');
+    
+    if (print_single_subject == 1) && (chosen_subjects_num == 1)
+        Print_Subject_Data_To_File (main_folder_for_results, data, precision_string, choice_set_type);
+    end
+    
 %     start_time = now;
 %     subject = num2str(data(1,1))
     
@@ -266,9 +273,6 @@ for i=1:chosen_subjects_num
 %     seconds = running_time(6);
 %     fprintf('\ntotal running time was:\n%d months, %d days, %d hours, %d minutes and %.3f seconds.\n',...
 %                                                                     months, days, hours, minutes, seconds);                    
-
-    % precision of numbers when printing
-    precision_string = strcat('%10.', num2str(print_precision), 'g');
 
     %% printing the results
     fprintf(file_handle, '%s,', num2str(data(1,1)));
