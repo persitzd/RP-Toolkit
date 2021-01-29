@@ -66,7 +66,7 @@ for i=1:rows
     end
     % print this row of the matrix
     for j=1:cols
-        if isempty(precision_string) || precision_string == 0
+        if isempty(precision_string) || isnumeric(precision_string)
             fprintf(file_var, '%s,', num2str(matrix(i,j)));
         else 
             fprintf(file_var, '%s,', num2str(matrix(i,j), precision_string));
