@@ -1,4 +1,4 @@
-function [bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Read(main_folder)
+function [bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Read(main_folder)
 
 % this function reads the user-interface screens saved settings
 
@@ -14,12 +14,12 @@ try
     [settings] = csvread(strcat(main_folder, '/', HPZ_Constants.settings_files_dir, '/', HPZ_Constants.advanced_options_settings_file_name, '.csv'));
     
     % in the next line, we call the 9th row and 3rd column in the settings
-    % matrix, because we have 9 rows and the max number of columns is 3.
+    % matrix, because we have 10 rows and the max number of columns is 3.
     % if it doesn't exists, it means that the settings file is corrupted,
     % cause it doesn't have all required data.
-    % if in the future you will add more rows (>9) or use longer rows (num
+    % if in the future you will add more rows (>10) or use longer rows (num
     % of columns > 3), you should increase these numbers respectively.
-    check_settings = settings(9 , 3); %#ok<NASGU>
+    check_settings = settings(10 , 3); %#ok<NASGU>
     
 catch
     % A) if we failed to read the file,
@@ -48,7 +48,7 @@ one_residuals_file = settings(6,1);
 debugger_mode = settings(7,1);
 waitbar_settings = settings(8,1:4);
 Varian_algorithm_settings = settings(9,1:2);
-
+print_single_subject = settings(10,1);
 
 
 % for (almost) every variable, we check if it has a valid value, otherwise we reset it
@@ -97,6 +97,9 @@ if one_residuals_file ~= 0 && one_residuals_file ~= 1
 end
 if debugger_mode ~= 0 && debugger_mode ~= 1
     debugger_mode = 1;
+end
+if print_single_subject ~= 0 && print_single_subject ~= 1
+    print_single_subject = 1;
 end
 if waitbar_settings(2) ~= 0 && waitbar_settings(2) ~= 1
     waitbar_settings(2) = 1;

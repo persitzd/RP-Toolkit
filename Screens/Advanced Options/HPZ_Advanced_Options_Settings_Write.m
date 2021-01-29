@@ -1,4 +1,4 @@
-function HPZ_Advanced_Options_Settings_Write(bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings, main_folder)
+function HPZ_Advanced_Options_Settings_Write(bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings, main_folder)
 
 % This function is called when the user wishes (and it is also the
 % default...) to save the choices he made now for the next time.
@@ -58,6 +58,8 @@ fprintf(settings_file, '%s,%s,%s,%s\n', num2str(waitbar_settings(1)), num2str(wa
 fprintf(settings_file, '%s,%s\n', num2str(Varian_algorithm_settings(1)), ...
                                 num2str(Varian_algorithm_settings(2)));   % line (9)
 
+% print_single_subject (1 = activated , 0 = not activated)
+fprintf(settings_file, '%s\n', num2str(print_single_subject));   % line (10)
 
 
 end

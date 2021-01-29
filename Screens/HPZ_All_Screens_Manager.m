@@ -1,4 +1,4 @@
-function [ok, data_matrix, subjects_index, action_flag, Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, pref_class, choice_set_type, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag, bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_All_Screens_Manager(main_folder, runs_counter)
+function [ok, data_matrix, subjects_index, action_flag, Graph_flags, power_test_settings, GARP_flags, AFRIAT_flags, VARIAN_flags, HOUTMAN_flags, MPI_flags, pref_class, choice_set_type, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag, bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings] = HPZ_All_Screens_Manager(main_folder, runs_counter)
 
 % This function calls to all relevant user-interface screens one after
 % another, and returns all the choices and user-preferences received from all of them 
@@ -47,6 +47,7 @@ BI_threshold = 0;
 max_starting_points = 0;
 one_residuals_file = 0;
 debugger_mode = 0;
+print_single_subject = 0;
 waitbar_settings = 0;
 Varian_algorithm_settings = 0;
 
@@ -67,7 +68,7 @@ end
 
 
 %% Read Advanced Settings
-[bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Read(main_folder);
+[bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Read(main_folder);
 
 
 

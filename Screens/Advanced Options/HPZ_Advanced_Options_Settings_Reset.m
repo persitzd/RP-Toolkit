@@ -11,10 +11,10 @@ function HPZ_Advanced_Options_Settings_Reset(main_folder)
 
 
 % get the default values
-[bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Default_Values();
+[bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Default_Values();
 
 % write the default values to the settings file
-HPZ_Advanced_Options_Settings_Write(bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings, main_folder);
+HPZ_Advanced_Options_Settings_Write(bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings, main_folder);
 
 
 end

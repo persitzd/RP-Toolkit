@@ -1,4 +1,4 @@
-function [bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Default_Values()
+function [bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Default_Values()
 
 % this function returns the default values of the advanced options
 
@@ -14,6 +14,7 @@ max_starting_points = [100 , 30 , 100];
 possible_num_convergence_points = [3,4,5,6,7,8,9,10,12,14,16,18,20,25,30];
 one_residuals_file = 1;
 debugger_mode = 0;
+print_single_subject = 0;
 waitbar_settings = [3 , 1 , 0 , 1];
 Varian_algorithm_settings = [10000 , 2];
 % Varian_Additive_Aggregators_1 = {'z/n', 'sqrt(z/n)'};

@@ -16,7 +16,7 @@ function HPZ_Screen_Advanced_Options(main_folder)
 
 
 % read the saved settings for this screen
-[bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Read(main_folder);
+[bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Read(main_folder);
 
 
 
@@ -855,6 +855,63 @@ debugger_mode_rd(2) = uicontrol(debugger_mode_group,...
 
 
 
+%% Print Subject Data of Single Subject
+% --- print_single_subject ---
+current_bottom = current_bottom - move_down;
+% current height of element
+current_height = label_height;
+% current bottom coordinate
+current_bottom = current_bottom - current_height;
+print_single_subject_label = uicontrol('Parent',panel, ...
+    'style','text',...
+    'units','pix',...
+    'position',[move_right+15 , current_bottom , label_width , current_height],...
+    'backgroundc',get(fh,'color'),...
+    'fontsize',label_font_size,'fontweight','bold',...
+    'ForegroundColor',headers_text_color,...
+    'HorizontalAlignment','left',...
+    'string','Print Data of Single Subject'); %#ok<NASGU>
+
+% Enable Button
+print_single_subject_enable_button = uicontrol('Parent',panel, 'style','push',...
+    'enable','on',...
+    'unit','pix',...
+    'position',[move_right+230 , current_bottom+8 , buttons_width , buttons_height],...
+    'string','Edit',...
+    'fontsize',big_font_size,...
+    'callback',{@print_single_subject_enable_button_call});
+
+% current height of element
+current_height = 35;
+% current bottom coordinate
+current_bottom = current_bottom - current_height;
+print_single_subject_group = uibuttongroup('Parent',panel, ...
+    'units','pix',...
+    'pos',[move_right+20 , current_bottom , element_width2 , current_height]);
+
+print_single_subject_rd(1) = uicontrol(print_single_subject_group,...
+    'value',print_single_subject ~= 0,...
+    'enable', 'off', ...
+    'style','rad',...
+    'unit','pix',...
+    'position',[yes_no_offsets2(1) , radio_bottom , sub_element_width2 , radio_height],...
+    'backgroundc',get(fh,'color'),...
+    'fontsize',font_size,...
+    'string','Yes');
+
+print_single_subject_rd(2) = uicontrol(print_single_subject_group,...
+    'value',print_single_subject == 0,...
+    'enable', 'off', ...
+    'style','rad',...
+    'unit','pix',...
+    'position',[yes_no_offsets2(2) , radio_bottom , sub_element_width2 , radio_height],...
+    'backgroundc',get(fh,'color'),...
+    'fontsize',font_size,...
+    'string','No');
+%% End of Print Subject Data of Single Subject
+
+
+
 
 
 %% OK Button
@@ -1096,6 +1153,7 @@ function [] = enable_all_enable_buttons(enable_or_disable)
     set(convergence_points_enable_button, 'enable', enable_str);
     set(varian_enable_button, 'enable', enable_str);
     set(debugger_enable_button, 'enable', enable_str);
+    set(print_single_subject_enable_button, 'enable', enable_str);
     set(ok_button, 'enable', enable_str);
 end
 
@@ -1167,7 +1225,11 @@ function [] = debugger_enable_button_call(varargin)
     enable_button_call_helper(debugger_enable_button, ...
                             {debugger_mode_rd});
 end
-
+% #9
+function [] = print_single_subject_enable_button_call(varargin)
+    enable_button_call_helper(print_single_subject_enable_button, ...
+                            {print_single_subject_rd});
+end
 
 
 
@@ -1233,8 +1295,15 @@ function [] = ok_button_call(varargin)
         debugger_mode = 0;
     end
     
+    if get(print_single_subject_rd(1),'value') == 1
+        print_single_subject = 1;
+    else
+        print_single_subject = 0;
+    end
+    
+    
     % write the current setting to the settings file to be saved for next time  
-    HPZ_Advanced_Options_Settings_Write(bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings, main_folder);
+    HPZ_Advanced_Options_Settings_Write(bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings, main_folder);
     
     
     % close the window
@@ -1262,7 +1331,7 @@ function [] = reset_button_call(varargin)
     % Callback for Reset button.
 
     % read default values
-    [bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Default_Values();
+    [bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, possible_num_convergence_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, Varian_algorithm_settings] = HPZ_Advanced_Options_Settings_Default_Values();
     
     % reset bootstrap settings
     set(sample_size_analytic_input,'string',num2str(bootstrap_sample_sizes(1)));
@@ -1296,6 +1365,9 @@ function [] = reset_button_call(varargin)
     % reset debugger mode settings
     set(debugger_mode_rd(1),'value', (debugger_mode ~= 0)*1);
     set(debugger_mode_rd(2),'value', (debugger_mode == 0)*1);
+    % reset print single subject settings
+    set(print_single_subject_rd(1),'value', (print_single_subjecte ~= 0)*1);
+    set(print_single_subject_rd(2),'value', (print_single_subject == 0)*1);
 end
 
 
