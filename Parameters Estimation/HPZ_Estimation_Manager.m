@@ -1,4 +1,4 @@
-function HPZ_Estimation_Manager(data_matrix, subjects_index, choice_set_type, action_flag, pref_class, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag, print_precision, bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, one_residuals_file, debugger_mode, waitbar_settings, main_folder_for_results, current_run, total_runs)
+function HPZ_Estimation_Manager(data_matrix, subjects_index, choice_set_type, action_flag, pref_class, function_flag, numeric_flag, param1_restrictions, param2_restrictions, fix_corners, metric_flag, aggregation_flag, max_time_estimation, min_counter, parallel_flag, output_file_config, write_all_flag, bootstrap_flag, file_val_str, residual_flag, in_sample_flag, out_sample_flag, print_precision, bootstrap_sample_sizes, bootstrap_significance_level, BI_threshold, max_starting_points, one_residuals_file, debugger_mode, print_single_subject, waitbar_settings, main_folder_for_results, current_run, total_runs)
 
 % this function is the container for the whole parameter estimation module - 
 % all parameter estimation procedures (estimation, printing results to
@@ -150,6 +150,10 @@ for i=1:chosen_subjects_num
     else
         data = data_matrix(first_obs_row(subjects_index(i)):rows,:);
         obs_num = data_matrix(rows,2);
+    end
+    
+    if (print_single_subject == 1) && (chosen_subjects_num == 1)
+        Print_Subject_Data_To_File (main_folder_for_results, data, precision_string, choice_set_type);
     end
     
     asymmetric_flag = 1;    % As is
