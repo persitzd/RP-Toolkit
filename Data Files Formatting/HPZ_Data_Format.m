@@ -29,6 +29,7 @@ try
     success = true;
 catch
     warning(char(strcat(HPZ_Constants.could_not_read_file_1, {' '}, file_path, HPZ_Constants.could_not_read_file_2)));
+    msgbox(char(strcat(HPZ_Constants.could_not_read_file_1, {' '}, file_path, HPZ_Constants.could_not_read_file_2)));
     mat = 0;
     success = false;
 end

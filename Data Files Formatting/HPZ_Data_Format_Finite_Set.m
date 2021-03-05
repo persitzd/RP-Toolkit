@@ -28,6 +28,7 @@ try
     % the number of columns should be even, not odd
     if mod(cols,2) == 1
         warning('Number of columns must be even, not odd!');
+        msgbox('Number of columns must be even, not odd!');
         error('Number of columns must be even, not odd!');
         %cols = cols-1; 
         %mat = mat(:, 1:cols);
@@ -45,6 +46,7 @@ try
         end
         if actual_choice_was_optional == false
             warning('Actual Choice is not one of the options presented to the consumer');
+            msgbox('Actual Choice is not one of the options presented to the consumer');
             error('Actual Choice is not one of the options presented to the consumer'); 
         end
     end
@@ -52,6 +54,7 @@ try
 catch
     if data_not_read_yet
         warning(char(strcat(HPZ_Constants.could_not_read_file_1, {' '}, file_path, HPZ_Constants.could_not_read_file_2)));
+        msgbox(char(strcat(HPZ_Constants.could_not_read_file_1, {' '}, file_path, HPZ_Constants.could_not_read_file_2)));
     end
     mat = 0;
     success = false;
