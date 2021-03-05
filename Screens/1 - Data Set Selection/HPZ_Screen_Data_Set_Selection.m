@@ -439,7 +439,6 @@ function [] = ok_button_call(varargin)
     
     if (~success)
         % the file does not exist or is not available - we end this run
-        msgbox(char(strcat(HPZ_Constants.could_not_read_file_1, {' '}, file_path, HPZ_Constants.could_not_read_file_2)));
         % remove the file from the list
         remove_file_call();
     elseif (~is_valid)
